@@ -167,15 +167,21 @@ class TicketsOrder:
         if not self.current_order:
             return
 
-        x, y = 50, 0
-        width, height = 280, 400
+        x, y = 960, 160
+        width, height = 240, 400
+        bg_color = (200, 200, 200)
+        line_thickness = 3
 
-        py.draw.rect(screen, ORDER_TICKET, (x, y, width, height))
-        py.draw.rect(screen, CONTOUR, (x, y, width, height), 3)
+        # Фон тикета
+        py.draw.rect(screen, bg_color, (x, y, width, height))
 
-        py.draw.line(screen, CONTOUR, (x, y + 80), (x + width, y + 80), 3)
-        py.draw.line(screen, CONTOUR, (x, y + 80 + 280), (x + width, y + 80 + 280), 3)
-        py.draw.line(screen, CONTOUR, (x, y + height - 40), (x + width, y + height - 40), 3)
+        # Внешняя рамка
+        py.draw.rect(screen, CONTOUR, (x, y, width, height), line_thickness)
+
+        # Горизонтальные разделители
+        py.draw.line(screen, CONTOUR, (x, y + 80), (x + width, y + 80), line_thickness)
+        py.draw.line(screen, CONTOUR, (x, y + 80 + 280), (x + width, y + 80 + 280), line_thickness)
+        py.draw.line(screen, CONTOUR, (x, y + height - 40), (x + width, y + height - 40), line_thickness)
 
         # Сироп
         syrup = self.current_order['syrup']
@@ -187,6 +193,7 @@ class TicketsOrder:
                 screen.blit(img, img_rect)
         else:
             py.draw.rect(screen, (200,200,200), (x + 2, y + 2, width - 4, 76))
+        py.draw.rect(screen, CONTOUR, (x, y, width, 80), line_thickness)
 
         # Молоко и эспрессо
         mid_y = y + 80
@@ -214,7 +221,7 @@ class TicketsOrder:
                     screen.blit(temp_text, t_rect)
         else:
             py.draw.rect(screen, (200,200,200), (milk_rect[0]+2, milk_rect[1]+2, milk_rect[2]-4, milk_rect[3]-4))
-        py.draw.rect(screen, CONTOUR, milk_rect, 1)
+        py.draw.rect(screen, CONTOUR, milk_rect, line_thickness)
 
         # Эспрессо
         espresso_rect = (x + half_width, mid_y, half_width, mid_height)
@@ -230,8 +237,9 @@ class TicketsOrder:
                     screen.blit(portions, p_rect)
         else:
             py.draw.rect(screen, (200,200,200), (espresso_rect[0]+2, espresso_rect[1]+2, espresso_rect[2]-4, espresso_rect[3]-4))
-        py.draw.rect(screen, CONTOUR, espresso_rect, 1)
-        py.draw.line(screen, CONTOUR, (x + half_width, mid_y), (x + half_width, mid_y + mid_height), 3)
+        py.draw.rect(screen, CONTOUR, espresso_rect, line_thickness)
+
+        py.draw.line(screen, CONTOUR, (x + half_width, mid_y), (x + half_width, mid_y + mid_height), line_thickness)
 
         # Чашка
         cup = self.current_order['cup']
@@ -244,7 +252,7 @@ class TicketsOrder:
                 screen.blit(cup_text, text_rect)
         else:
             py.draw.rect(screen, (200,200,200), (cup_rect[0]+2, cup_rect[1]+2, cup_rect[2]-4, cup_rect[3]-4))
-        py.draw.rect(screen, CONTOUR, cup_rect, 1)
+        py.draw.rect(screen, CONTOUR, cup_rect, line_thickness)
 
     def events(self, events):
         for event in events:

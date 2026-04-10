@@ -1,9 +1,7 @@
 class Station:
     """ Базовый класс """
-    def __init__(self, name, bg_color, button_color):
+    def __init__(self, name):
         self.name = name
-        self.bg_color = bg_color
-        self.button_color = button_color
         self.is_active = False
 
     def draw(self, screen):

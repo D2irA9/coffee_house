@@ -4,10 +4,10 @@ from .base import Station
 
 class BrewStation(Station):
     def __init__(self):
-        super().__init__("Приготовление", BLACK, WHITE)
+        super().__init__("Приготовление")
 
     def draw(self, screen):
-        screen.fill(WHITE)
+        screen.fill(ORANGE)
 
     def events(self, events):
         pass

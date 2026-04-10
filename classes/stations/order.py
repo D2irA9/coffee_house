@@ -10,7 +10,7 @@ class OrderStation(Station):
     def __init__(self, sound_manager, order):
         self.sound_manager = sound_manager
         self.order = order
-        super().__init__("Заказы", BLACK, GREEN)
+        super().__init__("Заказы")
         self.map = Map('assets/tiled/tmx/coffee_house.tmx', 48, 1)
         self.map_loaded = False
 
