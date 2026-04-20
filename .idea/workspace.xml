@@ -4,14 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="отображение тикета с тайменгом">
+    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="настройки, билет на заказ, кнопки навигации/">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/obj.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/obj.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/stations/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/stations/base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/tiled/Paws_Beans.tiled-session" beforeDir="false" afterPath="$PROJECT_DIR$/assets/tiled/Paws_Beans.tiled-session" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/tiled/tmx/stations1.tmx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/tiled/tmx/stations1.tmx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/stations/brew.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/stations/brew.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/stations/build.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/stations/build.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/stations/manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/stations/manager.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/stations/order.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/stations/order.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/tiled.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/tiled.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/colors.py" beforeDir="false" afterPath="$PROJECT_DIR$/colors.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/settings.json" afterDir="false" />
     </list>
@@ -295,7 +295,15 @@
       <option name="project" value="LOCAL" />
       <updated>1775727439667</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="настройки, билет на заказ, кнопки навигации/">
+      <option name="closed" value="true" />
+      <created>1775807158545</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1775807158545</updated>
+    </task>
+    <option name="localTasksCounter" value="24" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -331,6 +339,7 @@
     <MESSAGE value="генерация температуры молока" />
     <MESSAGE value="отображение тикета" />
     <MESSAGE value="отображение тикета с тайменгом" />
-    <option name="LAST_COMMIT_MESSAGE" value="отображение тикета с тайменгом" />
+    <MESSAGE value="настройки, билет на заказ, кнопки навигации/" />
+    <option name="LAST_COMMIT_MESSAGE" value="настройки, билет на заказ, кнопки навигации/" />
   </component>
 </project>

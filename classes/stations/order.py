@@ -77,7 +77,7 @@ class OrderStation(Station):
         png_files = [f for f in os.listdir(nps_folder) if f.lower().endswith('.png')]
 
         chosen_file = random.choice(png_files)
-        name = os.path.splitext(chosen_file)[0]
+        # name = os.path.splitext(chosen_file)[0]
         sprite_path = os.path.join(nps_folder, chosen_file)
 
         path = [(240, 140), (530, 140), (530, 120)]

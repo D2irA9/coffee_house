@@ -97,8 +97,6 @@ class StationManager:
         self.sound_manager = sound_manager
         self.logout_callback = logout_callback
 
-        self.tiket_l = Button(200, 70, WHITE, (0, 0))
-        self.tiket_r = Button(200, 70, WHITE, (1000, 0))
         # Настройки
         self.settings_show = False
         self.settings_btn = ImageButton("assets/sprites/settings/settings.png", (300, 0), 3)

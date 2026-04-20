@@ -12,7 +12,7 @@ class Tile(py.sprite.Sprite):
 
 class Map:
     """ Класс Карты """
-    def __init__(self, tmx_path, tile_size, scale):
+    def __init__(self, tmx_path, tile_size, scale=1):
         self.tile_size = tile_size
         self.scale = scale
         self.layers = []
