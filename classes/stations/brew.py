@@ -3,6 +3,7 @@ from globals import *
 from .base import Station
 from ..tiled import Map
 from ..node import CircleButton, Button, ImageButton
+import globals
 
 class BrewStation(Station):
     def __init__(self):
@@ -18,6 +19,7 @@ class BrewStation(Station):
         new_h = int(self.fon_img.get_height() * scale)
         self.image = py.transform.scale(self.fon_img, (new_w, new_h))
 
+        self.type_ingredients = db.get_ingredients_level(globals.id_player)
         for i, (x, y) in enumerate(self.cells_pos):
             cell = {
                 "id": i,
@@ -70,6 +72,11 @@ class BrewStation(Station):
                     if cell["button_milk"].signal(event.pos):
                         print("Уровень 1: Молоко")
                         cell["milk_menu_level"] = 1
+
                     if cell["button_espresso"].signal(event.pos):
                         print("Уровень 1: Эспрессо")
                         cell["espresso_menu_level"] = 1
+
+                    if cell["milk_level1_buttons"]["undo"].signal(event.pos) or cell["espresso_level1_buttons"]["undo"].signal(event.pos):
+                        cell["milk_menu_level"] = 0
+                        cell["espresso_menu_level"] = 0

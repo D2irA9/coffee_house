@@ -113,6 +113,21 @@ class DB:
             print(f"Ошибка получения монет: {e}")
             return None
 
+    def get_ingredients_level(self, id_player):
+        """Получение ингредиентов, доступных по уровню игрока"""
+        try:
+            id_level = self.get_player_level(id_player)
+            if id_level is None:
+                return []
+
+            query = "SELECT type, name FROM ingredients WHERE level <= %s ORDER BY type, name"
+            self.cursor.execute(query, (id_level,))
+            result = self.cursor.fetchall()
+            return result if result else []
+        except Exception as e:
+            print(f"Ошибка получения ингредиентов: {e}")
+            return []
+
     def close(self):
         """Закрытие соединения"""
         if self.cursor:
