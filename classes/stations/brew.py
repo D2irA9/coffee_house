@@ -3,7 +3,7 @@ from globals import *
 from .base import Station
 from ..tiled import Map
 from ..node import CircleButton, Button, ImageButton
-import globals
+import globals, math
 
 class BrewStation(Station):
     def __init__(self):
@@ -21,6 +21,33 @@ class BrewStation(Station):
 
         self.type_ingredients = db.get_ingredients_level(globals.id_player)
         for i, (x, y) in enumerate(self.cells_pos):
+            center_x = x + 114
+            center_y = y + 210
+            radius = 100
+
+            milk_ingredient_buttons = []
+            milk_ingredients = [ing for ing in self.type_ingredients if ing["type"] == "milk"]
+            num_milk = len(milk_ingredients)
+
+            for idx, ing in enumerate(milk_ingredients):
+                angle = (2 * math.pi * idx) / num_milk
+                btn_x = center_x + radius * math.cos(angle)
+                btn_y = center_y + radius * math.sin(angle)
+                btn = ImageButton(f'assets/sprites/ingredients/milk/{ing["name"]}.png', (int(btn_x), int(btn_y)), 3)
+                milk_ingredient_buttons.append(btn)
+
+            espresso_ingredient_buttons = []
+            espresso_ingredients = [ing for ing in self.type_ingredients if ing["type"] == "espresso"]
+            num_espresso = len(espresso_ingredients)
+
+            for idx, ing in enumerate(espresso_ingredients):
+                # Вычисляем угол для равномерного распределения по кругу
+                angle = (2 * math.pi * idx) / num_espresso
+                btn_x = center_x + radius * math.cos(angle)
+                btn_y = center_y + radius * math.sin(angle)
+                btn = ImageButton(f'assets/sprites/ingredients/espresso/{ing["name"]}.png', (int(btn_x), int(btn_y)), 3)
+                espresso_ingredient_buttons.append(btn)
+
             cell = {
                 "id": i,
                 "x": x,
@@ -32,16 +59,9 @@ class BrewStation(Station):
                 "milk_menu_level": 0,
                 # Уровни эспрессо (0-нет, 1-тип эспрессо, 2-порция)
                 "espresso_menu_level": 0,
-
-                # Молоко
-                "milk_level1_buttons": {
-                    "undo": ImageButton("assets/sprites/buttons/undo.png", (x + 96, y + 190), 3),
-                },
-
-                # Эспрессо
-                "espresso_level1_buttons": {
-                    "undo": ImageButton("assets/sprites/buttons/undo.png", (x + 96, y + 190), 3),
-                },
+                "undo_btn": ImageButton("assets/sprites/buttons/undo.png", (center_x, center_y), 3),
+                "milk_ingredient_buttons": milk_ingredient_buttons,
+                "espresso_ingredient_buttons": espresso_ingredient_buttons,
             }
             self.cells.append(cell)
 
@@ -59,24 +79,43 @@ class BrewStation(Station):
                 cell["button_milk"].draw(screen)
                 cell["button_espresso"].draw(screen)
 
+            # Подменю молока
             if cell["milk_menu_level"] == 1:
-                cell["milk_level1_buttons"]["undo"].draw(screen)
+                cell["undo_btn"].draw(screen)
+                for btn in cell["milk_ingredient_buttons"]:
+                    btn.draw(screen)
 
+            # Подменю эспрессо
             if cell["espresso_menu_level"] == 1:
-                cell["espresso_level1_buttons"]["undo"].draw(screen)
+                cell["undo_btn"].draw(screen)
+                for btn in cell["espresso_ingredient_buttons"]:
+                    btn.draw(screen)
 
     def events(self, events):
         for event in events:
-            if event.type == py.MOUSEBUTTONDOWN:
+            if event.type == py.MOUSEBUTTONDOWN and event.button == 1:
                 for cell in self.cells:
-                    if cell["button_milk"].signal(event.pos):
-                        print("Уровень 1: Молоко")
-                        cell["milk_menu_level"] = 1
+                    # Главное меню
+                    if cell["milk_menu_level"] == 0 and cell["espresso_menu_level"] == 0:
+                        if cell["button_milk"].signal(event.pos):
+                            print("Уровень 1: Молоко")
+                            cell["milk_menu_level"] = 1
+                        if cell["button_espresso"].signal(event.pos):
+                            print("Уровень 1: Эспрессо")
+                            cell["espresso_menu_level"] = 1
 
-                    if cell["button_espresso"].signal(event.pos):
-                        print("Уровень 1: Эспрессо")
-                        cell["espresso_menu_level"] = 1
+                    # Подменю молока
+                    if cell["milk_menu_level"] == 1:
+                        if cell["undo_btn"].signal(event.pos):
+                            cell["milk_menu_level"] = 0
+                        for btn in cell["milk_ingredient_buttons"]:
+                            if btn.signal(event.pos):
+                                print(f"Выбран ингредиент молока")
 
-                    if cell["milk_level1_buttons"]["undo"].signal(event.pos) or cell["espresso_level1_buttons"]["undo"].signal(event.pos):
-                        cell["milk_menu_level"] = 0
-                        cell["espresso_menu_level"] = 0
+                    # Подменю эспрессо
+                    if cell["espresso_menu_level"] == 1:
+                        if cell["undo_btn"].signal(event.pos):
+                            cell["espresso_menu_level"] = 0
+                        for btn in cell["espresso_ingredient_buttons"]:
+                            if btn.signal(event.pos):
+                                print(f"Выбран ингредиент эспрессо")

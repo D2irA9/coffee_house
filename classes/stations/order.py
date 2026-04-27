@@ -26,6 +26,7 @@ class OrderStation(Station):
 
         self.interact_btn = ImageButton("assets/sprites/characters/nps/interactive/place_order.png", (545, 90), 3)
         self.interact_btn_show = False
+        self.order_active = True
 
         # Изображение callout
         self.callout_img = py.image.load("assets/sprites/characters/nps/interactive/callout.png").convert_alpha()
@@ -157,7 +158,7 @@ class OrderStation(Station):
                     screen.blit(syrup_icon, syrup_rect)
 
         # Отображение кнопки
-        if not self.callout_show and self.npc.is_path_finished():
+        if not self.callout_show and self.npc.is_path_finished() and self.order_active:
             self.interact_btn_show = True
         else:
             self.interact_btn_show = False
@@ -175,6 +176,7 @@ class OrderStation(Station):
                 if self.interact_btn.signal(event.pos):
                     self.order.generate_random_order()
                     self.interact_btn_show = False
+                    self.order_active = False
                     self.callout_show = True
                     self.animation_index = -1
                     self.animation_timer = 0

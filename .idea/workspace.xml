@@ -4,9 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="кнопки станции &quot;приготовления&quot;">
+    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="кнопки отката">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/db.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/db.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/stations/brew.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/stations/brew.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/settings.json" afterDir="false" />
     </list>
@@ -306,7 +305,15 @@
       <option name="project" value="LOCAL" />
       <updated>1776712088074</updated>
     </task>
-    <option name="localTasksCounter" value="25" />
+    <task id="LOCAL-00025" summary="кнопки отката">
+      <option name="closed" value="true" />
+      <created>1777028614472</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1777028614472</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -344,6 +351,7 @@
     <MESSAGE value="отображение тикета с тайменгом" />
     <MESSAGE value="настройки, билет на заказ, кнопки навигации/" />
     <MESSAGE value="кнопки станции &quot;приготовления&quot;" />
-    <option name="LAST_COMMIT_MESSAGE" value="кнопки станции &quot;приготовления&quot;" />
+    <MESSAGE value="кнопки отката" />
+    <option name="LAST_COMMIT_MESSAGE" value="кнопки отката" />
   </component>
 </project>
