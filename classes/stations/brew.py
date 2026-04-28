@@ -49,17 +49,19 @@ class BrewStation(Station):
                 espresso_ingredient_buttons.append(btn)
 
             cell = {
-                "id": i,
-                "x": x,
-                "y": y,
-                "image": self.image,
+                "id": i, "x": x, "y": y, "image": self.image,
+
+                "active_ingredient": None,
+                "menu_level": 0,
+                
                 "button_milk": ImageButton("assets/sprites/buttons/milk.png", (x + 96, y + 65), 3),
+                "button_temp_milk": {
+                    "hot": ImageButton("assets/sprites/buttons/hot.png", (x + 96, y + 65), 3),
+                    "cold": ImageButton("assets/sprites/buttons/cold.png", (x + 96, y + 320), 3)
+                },
                 "button_espresso": ImageButton("assets/sprites/buttons/espresso.png", (x + 96, y + 320), 3),
-                # Уровни меню (0-основное, 1-тип, 2-температура, 3-наливка, 4-взбивание)
-                "milk_menu_level": 0,
-                # Уровни эспрессо (0-нет, 1-тип эспрессо, 2-порция)
-                "espresso_menu_level": 0,
                 "undo_btn": ImageButton("assets/sprites/buttons/undo.png", (center_x, center_y), 3),
+
                 "milk_ingredient_buttons": milk_ingredient_buttons,
                 "espresso_ingredient_buttons": espresso_ingredient_buttons,
             }
@@ -74,48 +76,69 @@ class BrewStation(Station):
 
         for cell in self.cells:
             screen.blit(cell["image"], (cell["x"], cell["y"]))
-            py.draw.rect(screen, CONTOUR, (cell["x"]-3, cell["y"]-3, 305, 501), 3)
-            if cell["milk_menu_level"] == 0 and cell["espresso_menu_level"] == 0:
+            py.draw.rect(screen, CONTOUR, (cell["x"] - 3, cell["y"] - 3, 305, 501), 3)
+
+            # Главное меню
+            if cell["active_ingredient"] is None:
                 cell["button_milk"].draw(screen)
                 cell["button_espresso"].draw(screen)
 
             # Подменю молока
-            if cell["milk_menu_level"] == 1:
+            elif cell["active_ingredient"] == "milk" and cell["menu_level"] == 1:
                 cell["undo_btn"].draw(screen)
                 for btn in cell["milk_ingredient_buttons"]:
                     btn.draw(screen)
 
+            # Второй уровень молока
+            elif cell["active_ingredient"] == "milk" and cell["menu_level"] == 2:
+                self.milk_lvl2_draw(screen, cell)
+
             # Подменю эспрессо
-            if cell["espresso_menu_level"] == 1:
+            elif cell["active_ingredient"] == "espresso" and cell["menu_level"] == 1:
                 cell["undo_btn"].draw(screen)
                 for btn in cell["espresso_ingredient_buttons"]:
                     btn.draw(screen)
+
+    def milk_lvl2_draw(self, screen, cell):
+        """Отрисовка выбора температуры молока"""
+        for btn in cell["button_temp_milk"].values():
+            btn.draw(screen)
 
     def events(self, events):
         for event in events:
             if event.type == py.MOUSEBUTTONDOWN and event.button == 1:
                 for cell in self.cells:
                     # Главное меню
-                    if cell["milk_menu_level"] == 0 and cell["espresso_menu_level"] == 0:
+                    if cell["active_ingredient"] is None:
                         if cell["button_milk"].signal(event.pos):
                             print("Уровень 1: Молоко")
-                            cell["milk_menu_level"] = 1
+                            cell["active_ingredient"] = "milk"
+                            cell["menu_level"] = 1
                         if cell["button_espresso"].signal(event.pos):
                             print("Уровень 1: Эспрессо")
-                            cell["espresso_menu_level"] = 1
+                            cell["active_ingredient"] = "espresso"
+                            cell["menu_level"] = 1
 
-                    # Подменю молока
-                    if cell["milk_menu_level"] == 1:
+                    # Молоко lvl 1
+                    elif cell["active_ingredient"] == "milk" and cell["menu_level"] == 1:
                         if cell["undo_btn"].signal(event.pos):
-                            cell["milk_menu_level"] = 0
+                            cell["active_ingredient"] = None
+                            cell["menu_level"] = 0
                         for btn in cell["milk_ingredient_buttons"]:
                             if btn.signal(event.pos):
                                 print(f"Выбран ингредиент молока")
+                                cell["menu_level"] = 2
+                    # Молоко lvl 2
+                    elif cell["active_ingredient"] == "milk" and cell["menu_level"] == 2:
+                        for btn in cell["button_temp_milk"].values():
+                            if btn.signal(event.pos):
+                                print("Температура выбрана")
 
                     # Подменю эспрессо
-                    if cell["espresso_menu_level"] == 1:
+                    elif cell["active_ingredient"] == "espresso" and cell["menu_level"] == 1:
                         if cell["undo_btn"].signal(event.pos):
-                            cell["espresso_menu_level"] = 0
+                            cell["active_ingredient"] = None
+                            cell["menu_level"] = 0
                         for btn in cell["espresso_ingredient_buttons"]:
                             if btn.signal(event.pos):
                                 print(f"Выбран ингредиент эспрессо")

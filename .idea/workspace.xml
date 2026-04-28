@@ -4,10 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="кнопки отката">
+    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="изменения в логике кнопки &quot;принятия заказа&quot;">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/stations/brew.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/stations/brew.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/settings.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/colors.py" beforeDir="false" afterPath="$PROJECT_DIR$/colors.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -313,7 +313,15 @@
       <option name="project" value="LOCAL" />
       <updated>1777028614472</updated>
     </task>
-    <option name="localTasksCounter" value="26" />
+    <task id="LOCAL-00026" summary="изменения в логике кнопки &quot;принятия заказа&quot;">
+      <option name="closed" value="true" />
+      <created>1777308909917</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1777308909917</updated>
+    </task>
+    <option name="localTasksCounter" value="27" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -352,6 +360,7 @@
     <MESSAGE value="настройки, билет на заказ, кнопки навигации/" />
     <MESSAGE value="кнопки станции &quot;приготовления&quot;" />
     <MESSAGE value="кнопки отката" />
-    <option name="LAST_COMMIT_MESSAGE" value="кнопки отката" />
+    <MESSAGE value="изменения в логике кнопки &quot;принятия заказа&quot;" />
+    <option name="LAST_COMMIT_MESSAGE" value="изменения в логике кнопки &quot;принятия заказа&quot;" />
   </component>
 </project>
