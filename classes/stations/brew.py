@@ -53,17 +53,19 @@ class BrewStation(Station):
 
                 "active_ingredient": None,
                 "menu_level": 0,
-                
+
                 "button_milk": ImageButton("assets/sprites/buttons/milk.png", (x + 96, y + 65), 3),
                 "button_temp_milk": {
                     "hot": ImageButton("assets/sprites/buttons/hot.png", (x + 96, y + 65), 3),
                     "cold": ImageButton("assets/sprites/buttons/cold.png", (x + 96, y + 320), 3)
                 },
+                "button_portion_milk": ImageButton("assets/sprites/buttons/milk extraction.png", (x + 23, y + 400), 3),
                 "button_espresso": ImageButton("assets/sprites/buttons/espresso.png", (x + 96, y + 320), 3),
                 "undo_btn": ImageButton("assets/sprites/buttons/undo.png", (center_x, center_y), 3),
 
                 "milk_ingredient_buttons": milk_ingredient_buttons,
                 "espresso_ingredient_buttons": espresso_ingredient_buttons,
+                "cap": ImageButton("assets/sprites/buttons/cap.png", (x + 40, y + 150), 3)
             }
             self.cells.append(cell)
 
@@ -93,6 +95,10 @@ class BrewStation(Station):
             elif cell["active_ingredient"] == "milk" and cell["menu_level"] == 2:
                 self.milk_lvl2_draw(screen, cell)
 
+            # Третий уровень молока
+            elif cell["active_ingredient"] == "milk" and cell["menu_level"] == 3:
+                self.milk_lvl3_draw(screen, cell)
+
             # Подменю эспрессо
             elif cell["active_ingredient"] == "espresso" and cell["menu_level"] == 1:
                 cell["undo_btn"].draw(screen)
@@ -103,6 +109,19 @@ class BrewStation(Station):
         """Отрисовка выбора температуры молока"""
         for btn in cell["button_temp_milk"].values():
             btn.draw(screen)
+
+    def milk_lvl3_draw(self, screen, cell):
+        """Отображение уровня Наливки"""
+        x, y = cell["x"], cell["y"]
+
+        py.draw.rect(screen, FON, (x + 25, y + 80, 250, 300))
+        py.draw.rect(screen, CONTOUR, (x + 25, y + 80, 250, 300), 3)
+
+        py.draw.rect(screen, PIPE, (x + 125, y + 80, 50, 50))
+        py.draw.rect(screen, CONTOUR, (x + 125, y + 80, 50, 50), 3)
+
+        cell["button_portion_milk"].draw(screen)
+        cell["cap"].draw(screen)
 
     def events(self, events):
         for event in events:
@@ -132,6 +151,7 @@ class BrewStation(Station):
                     elif cell["active_ingredient"] == "milk" and cell["menu_level"] == 2:
                         for btn in cell["button_temp_milk"].values():
                             if btn.signal(event.pos):
+                                cell["menu_level"] = 3
                                 print("Температура выбрана")
 
                     # Подменю эспрессо
