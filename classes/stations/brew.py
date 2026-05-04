@@ -65,7 +65,13 @@ class BrewStation(Station):
 
                 "milk_ingredient_buttons": milk_ingredient_buttons,
                 "espresso_ingredient_buttons": espresso_ingredient_buttons,
-                "cap": ImageButton("assets/sprites/buttons/cap.png", (x + 40, y + 150), 3)
+                "cap": ImageButton("assets/sprites/buttons/cap.png", (x + 40, y + 150), 3),
+
+                # Заливка
+                "is_pouring": False,
+                "pour_start_time": 0,
+                "pour_progress": 0.0,
+                "show_pour_button": True,
             }
             self.cells.append(cell)
 
@@ -110,6 +116,21 @@ class BrewStation(Station):
         for btn in cell["button_temp_milk"].values():
             btn.draw(screen)
 
+    def update_pouring(self, cell, current_time):
+        """Плавное увеличение прогрессом заливки"""
+        if not cell["is_pouring"]:
+            return
+        elapsed = (current_time - cell["pour_start_time"]) / 1000.0
+        max_time = 5.0
+        new_progress = min(1.0, elapsed / max_time)
+        cell["pour_progress"] = new_progress
+
+        # Если достигли максимума, останавливаемся и скрываем кнопку
+        if new_progress >= 1.0:
+            cell["is_pouring"] = False
+            cell["show_pour_button"] = False
+            print("Заливка завершена, стакан полон")
+
     def milk_lvl3_draw(self, screen, cell):
         """Отображение уровня Наливки"""
         x, y = cell["x"], cell["y"]
@@ -120,10 +141,34 @@ class BrewStation(Station):
         py.draw.rect(screen, PIPE, (x + 125, y + 80, 50, 50))
         py.draw.rect(screen, CONTOUR, (x + 125, y + 80, 50, 50), 3)
 
-        cell["button_portion_milk"].draw(screen)
+        # Прямоугольник-контур стакана
+        glass_x = x + 40
+        glass_y = y + 150
+        glass_width = 219
+        glass_height = 219
+        py.draw.rect(screen, WHITE, (glass_x, glass_y, glass_width, glass_height), 3)
+
+        # Заливка в зависимости от прогресса
+        if cell["pour_progress"] > 0:
+            fill_height = int(cell["pour_progress"] * glass_height)
+            if fill_height > 0:
+                fill_rect = py.Rect(glass_x, glass_y + glass_height - fill_height, glass_width, fill_height)
+                py.draw.rect(screen, WHITE, fill_rect)
+
+        # Кнопка наливки
+        if cell["show_pour_button"]:
+            cell["button_portion_milk"].draw(screen)
+
         cell["cap"].draw(screen)
 
     def events(self, events):
+        current_time = py.time.get_ticks()
+
+        # Обновление прогресса заливки
+        for cell in self.cells:
+            if cell.get("is_pouring", False):
+                self.update_pouring(cell, current_time)
+
         for event in events:
             if event.type == py.MOUSEBUTTONDOWN and event.button == 1:
                 for cell in self.cells:
@@ -149,10 +194,24 @@ class BrewStation(Station):
                                 cell["menu_level"] = 2
                     # Молоко lvl 2
                     elif cell["active_ingredient"] == "milk" and cell["menu_level"] == 2:
+                        if cell["undo_btn"].signal(event.pos):
+                            cell["menu_level"] = 1
                         for btn in cell["button_temp_milk"].values():
                             if btn.signal(event.pos):
                                 cell["menu_level"] = 3
                                 print("Температура выбрана")
+                                cell["show_pour_button"] = True
+
+                    # Молоко lvl 3
+                    elif cell["active_ingredient"] == "milk" and cell["menu_level"] == 3:
+                        if cell["undo_btn"].signal(event.pos):
+                            cell["menu_level"] = 2
+                            cell["is_pouring"] = False
+                            cell["show_pour_button"] = True
+                        if cell["show_pour_button"] and cell["button_portion_milk"].signal(event.pos):
+                            # Начинаем заливку
+                            cell["is_pouring"] = True
+                            cell["pour_start_time"] = current_time
 
                     # Подменю эспрессо
                     elif cell["active_ingredient"] == "espresso" and cell["menu_level"] == 1:
@@ -162,3 +221,11 @@ class BrewStation(Station):
                         for btn in cell["espresso_ingredient_buttons"]:
                             if btn.signal(event.pos):
                                 print(f"Выбран ингредиент эспрессо")
+
+            # Отпускание кнопки мыши
+            elif event.type == py.MOUSEBUTTONUP and event.button == 1:
+                for cell in self.cells:
+                    if cell.get("is_pouring", False):
+                        cell["is_pouring"] = False
+                        cell["show_pour_button"] = False
+                    print(f"Заливка остановлена, прогресс сохранён: {cell['pour_progress']:.2f}")
