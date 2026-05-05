@@ -6,7 +6,8 @@ from ..node import CircleButton, Button, ImageButton
 import globals, math
 
 class BrewStation(Station):
-    def __init__(self):
+    def __init__(self, sound_manager):
+        self.sound_manager = sound_manager
         super().__init__("Приготовление")
         self.map = Map('assets/tiled/tmx/stations1.tmx', 48)
         self.map_loaded = False
@@ -18,6 +19,13 @@ class BrewStation(Station):
         new_w = int(self.fon_img.get_width() * scale)
         new_h = int(self.fon_img.get_height() * scale)
         self.image = py.transform.scale(self.fon_img, (new_w, new_h))
+
+        # Звук
+        self.pour_sound = py.mixer.Sound("assets/sounds/sound/gotovka/Заливка_молока.mp3")
+        # Канал для звука заливки
+        self.pour_channel = py.mixer.Channel(1) if py.mixer.get_init() else None
+        # флаг, чтобы не перезапускать звук повторно
+        self.is_sound_playing = False
 
         self.type_ingredients = db.get_ingredients_level(globals.id_player)
         for i, (x, y) in enumerate(self.cells_pos):
@@ -75,6 +83,28 @@ class BrewStation(Station):
             }
             self.cells.append(cell)
 
+    def update_sound_volume(self):
+        """Обновляет громкость звука заливки в соответствии с настройками"""
+        if self.pour_sound and self.sound_manager:
+            vol = self.sound_manager.sfx_volume if self.sound_manager.sfx_enabled else 0.0
+            self.pour_sound.set_volume(vol)
+
+    def start_pour_sound(self):
+        """Запускает звук заливки с текущей громкостью"""
+        if not self.pour_channel or not self.pour_sound:
+            return
+        if not self.sound_manager.sfx_enabled:
+            return
+        self.update_sound_volume()
+        self.pour_channel.play(self.pour_sound, loops=-1)
+        self.is_sound_playing = True
+
+    def stop_pour_sound(self):
+        """Останавливает звук заливки"""
+        if self.pour_channel:
+            self.pour_channel.stop()
+        self.is_sound_playing = False
+
     def draw(self, screen):
         if not self.map_loaded:
             self.map.load_map()
@@ -120,6 +150,11 @@ class BrewStation(Station):
         """Плавное увеличение прогрессом заливки"""
         if not cell["is_pouring"]:
             return
+
+        # Обновляем громкость звука в реальном времени
+        if self.is_sound_playing and self.pour_channel and self.pour_channel.get_busy():
+            self.update_sound_volume()
+
         elapsed = (current_time - cell["pour_start_time"]) / 1000.0
         max_time = 5.0
         new_progress = min(1.0, elapsed / max_time)
@@ -129,6 +164,7 @@ class BrewStation(Station):
         if new_progress >= 1.0:
             cell["is_pouring"] = False
             cell["show_pour_button"] = False
+            self.stop_pour_sound()
             print("Заливка завершена, стакан полон")
 
     def milk_lvl3_draw(self, screen, cell):
@@ -208,10 +244,12 @@ class BrewStation(Station):
                             cell["menu_level"] = 2
                             cell["is_pouring"] = False
                             cell["show_pour_button"] = True
+                            self.stop_pour_sound()
                         if cell["show_pour_button"] and cell["button_portion_milk"].signal(event.pos):
                             # Начинаем заливку
                             cell["is_pouring"] = True
                             cell["pour_start_time"] = current_time
+                            self.start_pour_sound()
 
                     # Подменю эспрессо
                     elif cell["active_ingredient"] == "espresso" and cell["menu_level"] == 1:
@@ -228,4 +266,5 @@ class BrewStation(Station):
                     if cell.get("is_pouring", False):
                         cell["is_pouring"] = False
                         cell["show_pour_button"] = False
-                    print(f"Заливка остановлена, прогресс сохранён: {cell['pour_progress']:.2f}")
+                        self.stop_pour_sound()
+                        print(f"Заливка остановлена, прогресс сохранён: {cell['pour_progress']:.2f}")

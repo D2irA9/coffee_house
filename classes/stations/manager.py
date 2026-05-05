@@ -57,7 +57,7 @@ class StationManager:
         self.order = TicketsOrder()
         self.stations = {
             "order": OrderStation(sound_manager, self.order),
-            "brew": BrewStation(),
+            "brew": BrewStation(sound_manager),
             "build": BuildStation(),
         }
         self.current_station = "order"
