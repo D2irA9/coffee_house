@@ -14,8 +14,7 @@ font = Label()
 
 class Button:
     """Кнопки с возможностью отображения текста"""
-    def __init__(self, width, height, bg_color, pos,
-                 text="", text_color=(0,0,0), font_size=24, border_color=(58,58,80), border_width=3):
+    def __init__(self, width, height, bg_color, pos, text="", text_color=(0,0,0), font_size=24, border_color=(58,58,80), border_width=3):
         self.width = width
         self.height = height
         self.bg_color = bg_color

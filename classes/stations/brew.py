@@ -3,7 +3,7 @@ from globals import *
 from .base import Station
 from ..tiled import Map
 from ..node import CircleButton, Button, ImageButton
-import globals, math
+import globals, math, random
 
 class BrewStation(Station):
     def __init__(self, sound_manager):
@@ -26,6 +26,10 @@ class BrewStation(Station):
         self.pour_channel = py.mixer.Channel(1) if py.mixer.get_init() else None
         # флаг, чтобы не перезапускать звук повторно
         self.is_sound_playing = False
+
+        # Звук взбивания
+        self.whisk_sound = py.mixer.Sound("assets/sounds/sound/gotovka/Взбивание.mp3")
+        self.whisk_channel = py.mixer.Channel(2) if py.mixer.get_init() else None
 
         self.type_ingredients = db.get_ingredients_level(globals.id_player)
         for i, (x, y) in enumerate(self.cells_pos):
@@ -80,6 +84,12 @@ class BrewStation(Station):
                 "pour_start_time": 0,
                 "pour_progress": 0.0,
                 "show_pour_button": True,
+
+                # Анимация вытягивания трубы
+                "is_extending": False,
+                "extend_start_time": 0,
+                "extend_progress": 0.0,
+                "pipe_height": 50,
             }
             self.cells.append(cell)
 
@@ -104,6 +114,49 @@ class BrewStation(Station):
         if self.pour_channel:
             self.pour_channel.stop()
         self.is_sound_playing = False
+
+    def start_whisk_sound(self):
+        """Запускает звук взбивания"""
+        if not self.whisk_channel or not self.whisk_sound:
+            return
+        if not self.sound_manager.sfx_enabled:
+            return
+        vol = self.sound_manager.sfx_volume if self.sound_manager.sfx_enabled else 0.0
+        self.whisk_sound.set_volume(vol)
+        self.whisk_channel.play(self.whisk_sound, loops=-1)
+
+    def stop_whisk_sound(self):
+        """Останавливает звук взбивания"""
+        if self.whisk_channel:
+            self.whisk_channel.stop()
+
+    def update_extending(self, cell, current_time):
+        """Обновление анимации вытягивания трубы"""
+        if not cell.get("is_extending", False):
+            return
+
+        elapsed = (current_time - cell["extend_start_time"]) / 1000.0
+        animation_duration = 1.0  # 1 секунда на вытягивание
+
+        if elapsed >= animation_duration:
+            # Анимация завершена
+            cell["is_extending"] = False
+            cell["pipe_height"] = 219  # полная высота до дна стакана
+            cell["extend_progress"] = 1.0
+
+            # Включаем звук взбивания
+            self.start_whisk_sound()
+            print("Труба достала до дна, начинаем взбивание")
+
+            # Здесь позже будет таймер взбивания
+            # cell["is_whisking"] = True
+            # cell["whisk_start_time"] = current_time
+        else:
+            # Плавное увеличение высоты трубы
+            progress = elapsed / animation_duration
+            cell["extend_progress"] = progress
+            # Высота трубы от 50 до 219 пикселей
+            cell["pipe_height"] = int(50 + (219 - 50) * progress)
 
     def draw(self, screen):
         if not self.map_loaded:
@@ -147,11 +200,9 @@ class BrewStation(Station):
             btn.draw(screen)
 
     def update_pouring(self, cell, current_time):
-        """Плавное увеличение прогрессом заливки"""
         if not cell["is_pouring"]:
             return
 
-        # Обновляем громкость звука в реальном времени
         if self.is_sound_playing and self.pour_channel and self.pour_channel.get_busy():
             self.update_sound_volume()
 
@@ -160,31 +211,54 @@ class BrewStation(Station):
         new_progress = min(1.0, elapsed / max_time)
         cell["pour_progress"] = new_progress
 
-        # Если достигли максимума, останавливаемся и скрываем кнопку
+        # Если достигли максимума, останавливаемся и запускаем анимацию трубы
         if new_progress >= 1.0:
             cell["is_pouring"] = False
             cell["show_pour_button"] = False
             self.stop_pour_sound()
-            print("Заливка завершена, стакан полон")
+
+            # Запускаем анимацию вытягивания трубы
+            cell["is_extending"] = True
+            cell["extend_start_time"] = current_time
+            cell["extend_progress"] = 0.0
+            cell["pipe_height"] = 50
+            print("Заливка завершена, труба вытягивается")
 
     def milk_lvl3_draw(self, screen, cell):
-        """Отображение уровня Наливки"""
+        """Отображение уровня Наливки с вытягивающейся трубой"""
         x, y = cell["x"], cell["y"]
+
+        # Получаем текущую высоту трубы
+        pipe_height = cell.get("pipe_height", 50)
+        pipe_y = y + 80  # труба сверху
 
         py.draw.rect(screen, FON, (x + 25, y + 80, 250, 300))
         py.draw.rect(screen, CONTOUR, (x + 25, y + 80, 250, 300), 3)
 
-        py.draw.rect(screen, PIPE, (x + 125, y + 80, 50, 50))
-        py.draw.rect(screen, CONTOUR, (x + 125, y + 80, 50, 50), 3)
+        # Рисуем вытягивающуюся трубу (увеличивается вниз)
+        py.draw.rect(screen, PIPE, (x + 125, pipe_y, 50, pipe_height))
+        py.draw.rect(screen, CONTOUR, (x + 125, pipe_y, 50, pipe_height), 3)
 
-        # Прямоугольник-контур стакана
+        # Рисуем "наконечник" внизу трубы
+        if pipe_height > 50:
+            tip_y = pipe_y + pipe_height - 10
+            py.draw.rect(screen, (100, 100, 100), (x + 125, tip_y, 50, 10))
+
+        # Капли при вытягивании
+        if cell.get("is_extending", False):
+            for i in range(5):
+                drop_x = x + 125 + random.randint(-10, 60)
+                drop_y = pipe_y + pipe_height + random.randint(0, 20)
+                py.draw.circle(screen, (200, 200, 255), (drop_x, drop_y), random.randint(2, 4))
+
+        # Стакан
         glass_x = x + 40
         glass_y = y + 150
         glass_width = 219
         glass_height = 219
         py.draw.rect(screen, WHITE, (glass_x, glass_y, glass_width, glass_height), 3)
 
-        # Заливка в зависимости от прогресса
+        # Заливка
         if cell["pour_progress"] > 0:
             fill_height = int(cell["pour_progress"] * glass_height)
             if fill_height > 0:
@@ -192,10 +266,16 @@ class BrewStation(Station):
                 py.draw.rect(screen, WHITE, fill_rect)
 
         # Кнопка наливки
-        if cell["show_pour_button"]:
+        if cell["show_pour_button"] and not cell.get("is_extending", False):
             cell["button_portion_milk"].draw(screen)
 
         cell["cap"].draw(screen)
+
+    def deactivate(self):
+        """При выходе со станции выключаем все звуки"""
+        self.stop_pour_sound()
+        self.stop_whisk_sound()
+        super().deactivate()
 
     def events(self, events):
         current_time = py.time.get_ticks()
@@ -204,6 +284,8 @@ class BrewStation(Station):
         for cell in self.cells:
             if cell.get("is_pouring", False):
                 self.update_pouring(cell, current_time)
+            if cell.get("is_extending", False):
+                self.update_extending(cell, current_time)
 
         for event in events:
             if event.type == py.MOUSEBUTTONDOWN and event.button == 1:
@@ -267,4 +349,11 @@ class BrewStation(Station):
                         cell["is_pouring"] = False
                         cell["show_pour_button"] = False
                         self.stop_pour_sound()
-                        print(f"Заливка остановлена, прогресс сохранён: {cell['pour_progress']:.2f}")
+
+                        # Запускаем анимацию вытягивания трубы (если что-то налито)
+                        if cell["pour_progress"] > 0:
+                            cell["is_extending"] = True
+                            cell["extend_start_time"] = current_time
+                            cell["extend_progress"] = 0.0
+                            cell["pipe_height"] = 50
+                            print(f"Заливка остановлена, прогресс: {cell['pour_progress']:.2f}, труба вытягивается")

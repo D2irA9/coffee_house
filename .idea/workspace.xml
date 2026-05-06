@@ -4,8 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="заливка">
+    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="настройка звук заливки">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/node.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/node.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/stations/brew.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/stations/brew.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/settings.json" afterDir="false" />
     </list>
@@ -346,7 +347,15 @@
       <option name="project" value="LOCAL" />
       <updated>1777927427049</updated>
     </task>
-    <option name="localTasksCounter" value="30" />
+    <task id="LOCAL-00030" summary="настройка звук заливки">
+      <option name="closed" value="true" />
+      <created>1778013377043</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1778013377043</updated>
+    </task>
+    <option name="localTasksCounter" value="31" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -361,7 +370,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="получение монет" />
     <MESSAGE value="Отображение станции заказов" />
     <MESSAGE value="+Настройки" />
     <MESSAGE value="volume.draw" />
@@ -386,7 +394,8 @@
     <MESSAGE value="температура молока" />
     <MESSAGE value="Отрисовка уровня порции" />
     <MESSAGE value="заливка" />
-    <option name="LAST_COMMIT_MESSAGE" value="заливка" />
+    <MESSAGE value="настройка звук заливки" />
+    <option name="LAST_COMMIT_MESSAGE" value="настройка звук заливки" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
