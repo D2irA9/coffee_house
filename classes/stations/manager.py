@@ -53,11 +53,11 @@ class Slider:
 
 
 class StationManager:
-    def __init__(self, sound_manager, logout_callback):
+    def __init__(self, sound_manager, logout_callback, milk_colors, espresso_colors, syrup_colors):
         self.order = TicketsOrder()
         self.stations = {
             "order": OrderStation(sound_manager, self.order),
-            "brew": BrewStation(sound_manager),
+            "brew": BrewStation(sound_manager, milk_colors, espresso_colors, syrup_colors),
             "build": BuildStation(),
         }
         self.current_station = "order"

@@ -383,7 +383,29 @@ def logout():
     next_stage = "meow"
     current_channel = None
 
+def parse_color(color_str):
+    if not color_str:
+        return (200, 200, 200)
+    parts = color_str.strip('()').split(',')
+    return tuple(int(p.strip()) for p in parts[:3])
+
+def load_ingredient_colors():
+    colors_data = db.get_ingredients_color()
+    milk = {}
+    espresso = {}
+    syrup = {}
+    for item in colors_data:
+        color = parse_color(item['color'])
+        if item['type'] == 'milk':
+            milk[item['name']] = color
+        elif item['type'] == 'espresso':
+            espresso[item['name']] = color
+        elif item['type'] == 'syrup':
+            syrup[item['name']] = color
+    return milk, espresso, syrup
+
 db.connect()
+milk_colors, espresso_colors, syrup_colors = load_ingredient_colors()
 
 while True:
     events = py.event.get()
@@ -418,7 +440,7 @@ while True:
     else:
         if check_session():
             if station_manager is None:
-                station_manager = StationManager(sound_manager, logout)
+                station_manager = StationManager(sound_manager, logout, milk_colors, espresso_colors, syrup_colors)
             game(screen, events, station_manager)
         else:
             screen_login()

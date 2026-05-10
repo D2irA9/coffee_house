@@ -128,6 +128,19 @@ class DB:
             print(f"Ошибка получения ингредиентов: {e}")
             return []
 
+    def get_ingredients_color(self):
+        if self.cursor is None:
+            print("Ошибка: курсор не инициализирован. Вызовите connect() сначала.")
+            return []
+        try:
+            query = "SELECT type, name, color FROM ingredients"
+            self.cursor.execute(query)
+            result = self.cursor.fetchall()
+            return result if result else []
+        except Exception as e:
+            print(f"Ошибка получения ингредиентов: {e}")
+            return []
+
     def close(self):
         """Закрытие соединения"""
         if self.cursor:
