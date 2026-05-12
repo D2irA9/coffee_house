@@ -100,7 +100,13 @@ class BrewStation(Station):
                 "undo_btn": ImageButton("assets/sprites/buttons/undo.png", (center_x, center_y), 3),
 
                 "milk_ingredient_buttons": milk_ingredient_buttons,
+
                 "espresso_ingredient_buttons": espresso_ingredient_buttons,
+                "button_portion_espresso": {
+                    "1": ImageButton("assets/sprites/buttons/portions.png", (x + 112, y + 100), 3, "1"),
+                    "2": ImageButton("assets/sprites/buttons/portions.png", (x + 112, y + 210), 3, "2"),
+                    "3": ImageButton("assets/sprites/buttons/portions.png", (x + 112, y + 325), 3, "3")
+                },
                 "cap": ImageButton("assets/sprites/buttons/cap.png", (x + 40, y + 150), 3),
 
                 # Переменные наливки
@@ -309,6 +315,9 @@ class BrewStation(Station):
                 for btn in cell["espresso_ingredient_buttons"]:
                     btn.draw(screen)
 
+            elif cell["active_ingredient"] == "espresso" and cell["menu_level"] == 2:
+                self.espresso_lvl2_draw(screen, cell)
+
         # Отладочные прямоугольники (можно удалить или оставить)
         py.draw.rect(screen, RED, (350, 620, 70, 50), 3)
         py.draw.rect(screen, GREEN, (780, 620, 70, 50), 3)
@@ -436,6 +445,12 @@ class BrewStation(Station):
         # Контур
         py.draw.rect(screen, (40, 40, 40), (x + 20, timer_y, timer_w, 40), 3)
 
+    def espresso_lvl2_draw(self, screen, cell):
+        """ Отрисовка уровня 2 эспрессо: выбор порции """
+        x, y = cell["x"], cell["y"]
+        for btn in cell["button_portion_espresso"].values():
+            btn.draw(screen)
+
     # Обработка событий
     def events(self, events):
         current_time = py.time.get_ticks()
@@ -503,6 +518,7 @@ class BrewStation(Station):
                             cell["menu_level"] = 0
                         for btn in cell["espresso_ingredient_buttons"]:
                             if btn.signal(event.pos):
+                                cell["menu_level"] = 2
                                 print("Выбран эспрессо (заглушка)")
 
             #Отпускание кнопки мыши: останавливаем наливку и запускаем опускание трубы

@@ -63,32 +63,81 @@ class Button:
         """ Проверка, находится ли точка внутри кнопки """
         return self.rect.collidepoint(pos)
 
+
 class ImageButton:
-    """Кнопка на основе изображения (текстуры)"""
-    def __init__(self, image_path, pos, scale=1.0):
+    """Кнопка на основе изображения (текстуры) с возможностью текста поверх"""
+
+    def __init__(self, image_path, pos, scale=1.0, text="", text_color=(0, 0, 0), font_size=20, text_pos="center"):
+        # Загружаем и масштабируем изображение
         self.image_original = py.image.load(image_path).convert_alpha()
         if scale != 1.0:
-            new_width = int(self.image_original.get_width() * scale)
-            new_height = int(self.image_original.get_height() * scale)
-            self.image = py.transform.scale(self.image_original, (new_width, new_height))
+            new_w = int(self.image_original.get_width() * scale)
+            new_h = int(self.image_original.get_height() * scale)
+            self.base_image = py.transform.scale(self.image_original, (new_w, new_h))
         else:
-            self.image = self.image_original
+            self.base_image = self.image_original.copy()
+        self.image = self.base_image.copy()
+
+        # Параметры текста
+        self.text = text
+        self.text_color = text_color
+        self.font_size = font_size
+        self.text_pos = text_pos
+
+        if text:
+            self._add_text_to_image()
+
         self.rect = self.image.get_rect(topleft=pos)
 
+    def _add_text_to_image(self):
+        """Добавляет текст на текущее изображение кнопки"""
+        text_surface = font.text_ret(self.font_size, self.text, self.text_color)
+        text_rect = text_surface.get_rect()
+        img_rect = self.image.get_rect()
+
+        if self.text_pos == "center":
+            text_rect.center = img_rect.center
+        elif self.text_pos == "topleft":
+            text_rect.topleft = (5, 5)
+        elif self.text_pos == "topright":
+            text_rect.topright = (img_rect.width - 5, 5)
+        elif self.text_pos == "bottomleft":
+            text_rect.bottomleft = (5, img_rect.height - 5)
+        elif self.text_pos == "bottomright":
+            text_rect.bottomright = (img_rect.width - 5, img_rect.height - 5)
+        else:
+            text_rect.center = img_rect.center
+
+        self.image.blit(text_surface, text_rect)
+
+    def set_text(self, text):
+        """Изменить текст на кнопке"""
+        self.text = text
+        self.image = self.base_image.copy()
+        if self.text:
+            self._add_text_to_image()
+
+    def set_text_color(self, color):
+        self.text_color = color
+        self.set_text(self.text)
+
+    def set_font_size(self, size):
+        self.font_size = size
+        self.set_text(self.text)
+
+    def set_text_pos(self, pos):
+        self.text_pos = pos
+        self.set_text(self.text)
+
     def draw(self, screen):
-        """Отображение кнопки на экране """
         screen.blit(self.image, self.rect)
 
     def signal(self, pos):
-        """Для кликов"""
         return self.rect.collidepoint(pos)
 
     def flip(self, xbool=True, ybool=False):
-        """
-        Зеркально отражает изображение кнопки.
-        xbool – отразить по горизонтали, ybool – по вертикали.
-        """
         self.image = py.transform.flip(self.image, xbool, ybool)
+        self.base_image = py.transform.flip(self.base_image, xbool, ybool)
         self.rect = self.image.get_rect(topleft=self.rect.topleft)
         return self
 
