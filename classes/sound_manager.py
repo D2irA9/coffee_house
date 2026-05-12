@@ -52,7 +52,7 @@ class SoundManager:
 
     def get_sfx_tracks(self, subfolder=""):
         """Возвращает список звуков из указанной подпапки"""
-        print(self.sfx_sounds.get(subfolder, []))
+        # print(self.sfx_sounds.get(subfolder, []))
         return self.sfx_sounds.get(subfolder, [])
 
     def start_music(self, subfolder="background"):
