@@ -694,7 +694,7 @@ class BrewStation(Station):
 
                             # Запуск плавной заливки
                             portions = cell["selected_espresso_portion"]
-                            cell["target_espresso_progress"] = portions / 3.0
+                            cell["target_espresso_progress"] = portions / 4.0
                             cell["is_pouring_espresso"] = True
                             cell["pour_espresso_start_time"] = current_time
                             cell["pour_espresso_progress"] = 0.0

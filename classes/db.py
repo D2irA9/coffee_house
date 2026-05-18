@@ -36,7 +36,7 @@ class DB:
             hashed_password = hashlib.sha256(password.encode()).hexdigest()
 
             query = """
-                INSERT INTO players (name, email, password, id_level, experience, coins)
+                INSERT INTO players (name, email, password, level_id, experience, coins)
                 VALUES (%s, %s, %s, %s, %s, %s)
             """
             values = (name, email, hashed_password, 1, 0, coins)
@@ -102,15 +102,15 @@ class DB:
     def get_player_level(self, id_player):
         """Получает уровень игрока по id"""
         try:
-            query = "SELECT id_level FROM players WHERE id = %s"
+            query = "SELECT level_id FROM players WHERE id = %s"
             self.cursor.execute(query, (id_player,))
             result = self.cursor.fetchone()
             if result:
-                return result['id_level']
+                return result['level_id']
             else:
                 return None
         except Exception as e:
-            print(f"Ошибка получения монет: {e}")
+            print(f"Ошибка получения уровня: {e}")
             return None
 
     def get_ingredients_level(self, id_player):
@@ -120,7 +120,7 @@ class DB:
             if id_level is None:
                 return []
 
-            query = "SELECT type, name FROM ingredients WHERE level <= %s ORDER BY type, name"
+            query = "SELECT type, name, color FROM ingredients WHERE level_id <= %s ORDER BY type, name"
             self.cursor.execute(query, (id_level,))
             result = self.cursor.fetchall()
             return result if result else []

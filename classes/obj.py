@@ -35,29 +35,31 @@ class TicketsOrder:
     def _load_data(self):
         """Загружает данные, доступные на уровне игрока"""
         # Чашки
-        db.cursor.execute("SELECT id, name, color, level FROM ingredients WHERE type='cup' AND level <= %s", (self.player_level,))
+        db.cursor.execute("SELECT id, cup, capacity FROM cup_sizes")
         cups = db.cursor.fetchall()
-        capacity_map = {'S': 4, 'M': 5, 'L': 6}
+        # Если в cup_sizes нет level_id, то все чашки доступны с 1 уровня.
+        # При желании можно добавить поле level_id в cup_sizes и фильтровать.
         for cup in cups:
-            cup['cup'] = cup['name']
-            cup['capacity'] = capacity_map.get(cup['name'], 4)
-            cup['color'] = self._parse_color(cup['color'])
+            cup['cup'] = cup['cup']
+            cup['capacity'] = cup['capacity']
+            # цвет для чашки можно не загружать или добавить позже
+            cup['color'] = (200, 200, 200)  # временно
         self.cup_sizes = cups
 
         # Эспрессо
-        db.cursor.execute("SELECT id, name, color FROM ingredients WHERE type='espresso' AND level <= %s", (self.player_level,))
+        db.cursor.execute("SELECT id, name, color FROM ingredients WHERE type='espresso' AND level_id <= %s", (self.player_level,))
         self.espresso_types = db.cursor.fetchall()
         for e in self.espresso_types:
             e['color'] = self._parse_color(e['color'])
 
         # Молоко
-        db.cursor.execute("SELECT id, name, color FROM ingredients WHERE type='milk' AND level <= %s", (self.player_level,))
+        db.cursor.execute("SELECT id, name, color FROM ingredients WHERE type='milk' AND level_id <= %s", (self.player_level,))
         self.milk_types = db.cursor.fetchall()
         for m in self.milk_types:
             m['color'] = self._parse_color(m['color'])
 
         # Сиропы
-        db.cursor.execute("SELECT id, name, color FROM ingredients WHERE type='syrup' AND level <= %s", (self.player_level,))
+        db.cursor.execute("SELECT id, name, color FROM ingredients WHERE type='syrup' AND level_id <= %s", (self.player_level,))
         self.syrups = db.cursor.fetchall()
         for s in self.syrups:
             s['color'] = self._parse_color(s['color'])

@@ -150,7 +150,7 @@ class OrderStation(Station):
                     espresso_rect = espresso_icon.get_rect(center=(self.callout_rect.centerx, 130))
                     screen.blit(espresso_icon, espresso_rect)
             elif self.animation_index == 3:
-                # Сироп (если есть)
+                # Сироп
                 syrup_name = order['syrup']['name']
                 if syrup_name in self.syrup_sprites:
                     syrup_icon = self.syrup_sprites[syrup_name]
