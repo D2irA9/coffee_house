@@ -193,7 +193,6 @@ class BrewStation(Station):
             cell["espresso_pipe_height"] = int(50 + (219 - 50) * progress)
 
     def update_roasting(self, cell, current_time):
-        """Обновление процесса обжарки (таймер до цели)"""
         if not cell.get("is_roasting", False):
             return
         if "roast_start_time" not in cell:
@@ -205,7 +204,6 @@ class BrewStation(Station):
         zone_start = cell.get("ideal_zone_start", 40)
         zone_end = cell.get("ideal_zone_end", 60)
 
-        # Время обжарки зависит от попадания в зелёную зону
         roast_time = 2.0 if zone_start <= stop_position <= zone_end else 4.0
         elapsed = (current_time - cell["roast_start_time"]) / 1000.0
         progress = min(target_progress, (elapsed / roast_time) * 100)
@@ -213,31 +211,26 @@ class BrewStation(Station):
 
         if progress >= target_progress:
             quality = "отличное" if zone_start <= stop_position <= zone_end else "среднее"
-            if self.build_station:
-                self.build_station.add_ready_drink(
-                    drink_type="espresso",
-                    espresso_type=cell["selected_espresso_type"],
-                    espresso_quality=quality,
-                    portions=cell["selected_espresso_portion"]
-                )
-            else:
-                print("ОШИБКА: BuildStation не подключена!")
+            print(f"Эспрессо обжарен! Порций: {cell['selected_espresso_portion']}, качество: {quality}")
+            cell["is_roasting"] = False
+            # Никакого сброса – ячейка остаётся в menu_level = 4,
+            # стакан, труба, таймер (на 100%) продолжают отображаться.
 
             # Сброс состояния ячейки
-            cell["active_ingredient"] = None
-            cell["menu_level"] = 0
-            cell["is_roasting"] = False
-            cell["roast_slider_progress"] = 0
-            cell["roast_slider_stopped"] = False
-            cell["roast_slider_direction"] = 1
-            cell["roast_target_progress"] = 0
-            cell["roast_progress"] = 0
-            cell.pop("roast_start_time", None)
-            cell.pop("roast_slider_stop_position", None)
-            cell["selected_espresso_type"] = None
-            cell["selected_espresso_portion"] = 1
-            cell["pour_espresso_progress"] = 0.0
-            cell["espresso_pipe_height"] = 50
+            # cell["active_ingredient"] = None
+            # cell["menu_level"] = 0
+            # cell["is_roasting"] = False
+            # cell["roast_slider_progress"] = 0
+            # cell["roast_slider_stopped"] = False
+            # cell["roast_slider_direction"] = 1
+            # cell["roast_target_progress"] = 0
+            # cell["roast_progress"] = 0
+            # cell.pop("roast_start_time", None)
+            # cell.pop("roast_slider_stop_position", None)
+            # cell["selected_espresso_type"] = None
+            # cell["selected_espresso_portion"] = 1
+            # cell["pour_espresso_progress"] = 0.0
+            # cell["espresso_pipe_height"] = 50
 
     # ---------- МЕТОДЫ ОТРИСОВКИ ЭСПРЕССО ----------
     def draw_espresso_slider(self, screen, cell):
@@ -345,7 +338,7 @@ class BrewStation(Station):
         glass_y = y + 150
         portions = cell["selected_espresso_portion"]
         espresso_color = self.espresso_colors.get(cell["selected_espresso_type"], (110, 59, 9))
-        fill_h = int(glass_h * (portions / 3.0))
+        fill_h = int(glass_h * (portions / 4.0))
         if fill_h > 0:
             fill_rect = py.Rect(glass_x, glass_y + glass_h - fill_h, glass_w, fill_h)
             py.draw.rect(screen, espresso_color, fill_rect)
