@@ -151,8 +151,60 @@ class BrewStation(Station):
                 "cap_pos": None,
 
                 "pipe_pos": None,
+
+                "milk_cap_draggable": False,
+                "milk_cap_drag": False,
+                "milk_cap_drag_offset_x": 0,
+                "milk_cap_drag_offset_y": 0,
+                "milk_cap_pos": None,
+                "milk_whisking_paused": False,
             }
             self.cells.append(cell)
+
+    def start_drag_milk_cap(self, cell, mouse_x, mouse_y):
+        if not cell.get("milk_cap_draggable", False):
+            return
+        if not cell["milk_cap_pos"]:
+            return
+        cap_x, cap_y = cell["milk_cap_pos"]
+        glass_img = cell["cap"].image
+        cap_rect = py.Rect(cap_x, cap_y, glass_img.get_width(), glass_img.get_height())
+        if cap_rect.collidepoint(mouse_x, mouse_y):
+            cell["milk_cap_drag"] = True
+            cell["milk_cap_drag_offset_x"] = mouse_x - cap_x
+            cell["milk_cap_drag_offset_y"] = mouse_y - cap_y
+
+            # Если взбивание активно – ставим на паузу
+            if cell.get("is_whisking", False):
+                cell["milk_whisking_paused"] = True
+                self.stop_whisk_sound()  # останавливаем звук
+                self.retract_milk_pipe(cell)  # втягиваем трубу
+
+    def update_drag_milk_cap(self, cell, mouse_x, mouse_y):
+        if cell.get("milk_cap_drag", False):
+            new_x = mouse_x - cell["milk_cap_drag_offset_x"]
+            new_y = mouse_y - cell["milk_cap_drag_offset_y"]
+            cell["milk_cap_pos"] = (new_x, new_y)
+
+    def stop_drag_milk_cap(self, cell):
+        if cell.get("milk_cap_drag", False):
+            cell["milk_cap_drag"] = False
+            # Возвращаем стакан в исходное положение
+            glass_img = cell["cap"].image
+            glass_w, glass_h = glass_img.get_width(), glass_img.get_height()
+            original_glass_x = cell["x"] + (300 - glass_w) // 2
+            original_glass_y = cell["y"] + 150
+            cell["milk_cap_pos"] = (original_glass_x, original_glass_y)
+
+            # Если взбивание было на паузе – возобновляем
+            if cell.get("milk_whisking_paused", False):
+                cell["milk_whisking_paused"] = False
+                self.start_whisk_sound()  # возобновляем звук
+                # Трубу не опускаем – остаётся короткой (уже retract_milk_pipe)
+
+    def retract_milk_pipe(self, cell):
+        """Втягивает трубу молока: укорачивает до 50 пикселей"""
+        cell["pipe_height"] = 50
 
     def start_roast_sound(self):
         print("start_roast_sound called")
@@ -502,6 +554,15 @@ class BrewStation(Station):
             cell["whisk_progress"] = 0.0
             cell["menu_level"] = 4
             self.start_whisk_sound()
+            # Разрешаем перетаскивание стакана
+            cell["milk_cap_draggable"] = True
+            # Инициализируем позицию стакана
+            if cell["milk_cap_pos"] is None:
+                glass_img = cell["cap"].image
+                glass_w, glass_h = glass_img.get_width(), glass_img.get_height()
+                cell["milk_cap_pos"] = (cell["x"] + 40, cell["y"] + 150)  # исходная позиция
+            # Сбрасываем флаг паузы (на всякий случай)
+            cell["milk_whisking_paused"] = False
         else:
             progress = elapsed / 1.0
             cell["extend_progress"] = progress
@@ -510,6 +571,10 @@ class BrewStation(Station):
     def update_whisking(self, cell, current_time):
         if not cell.get("is_whisking", False):
             return
+        # Если взбивание на паузе – ничего не делаем
+        if cell.get("milk_whisking_paused", False):
+            return
+
         if self.whisk_channel and self.whisk_channel.get_busy():
             vol = self.sound_manager.sfx_volume if self.sound_manager.sfx_enabled else 0.0
             self.whisk_channel.set_volume(vol)
@@ -653,15 +718,24 @@ class BrewStation(Station):
                 if bubble_y > y + 150:
                     py.draw.circle(screen, (200, 200, 255, 150), (bubble_x, bubble_y), random.randint(2, 5))
         self.draw_whisk_timer(screen, cell)
-        glass_x, glass_y = x + 40, y + 150
-        glass_w, glass_h = 219, 219
-        py.draw.rect(screen, WHITE, (glass_x, glass_y, glass_w, glass_h), 3)
+
+        # Стакан – используем milk_cap_pos если есть
+        glass_img = cell["cap"].image
+        glass_w, glass_h = glass_img.get_width(), glass_img.get_height()
+        if cell.get("milk_cap_pos"):
+            glass_x, glass_y = cell["milk_cap_pos"]
+        else:
+            glass_x, glass_y = x + 40, y + 150
+
+        # Заливка молоком
         if cell["pour_progress"] > 0:
             fill_h = int(cell["pour_progress"] * glass_h)
             fill_rect = py.Rect(glass_x, glass_y + glass_h - fill_h, glass_w, fill_h)
             milk_color = self.milk_colors.get(cell.get("selected_milk_type"), (255, 250, 240))
             py.draw.rect(screen, milk_color, fill_rect)
-        cell["cap"].draw(screen)
+
+        # Отрисовка стакана поверх заливки
+        screen.blit(glass_img, (glass_x, glass_y))
 
     def draw_whisk_timer(self, screen, cell):
         x, y = cell["x"], cell["y"]
@@ -700,9 +774,9 @@ class BrewStation(Station):
 
         for event in events:
             if event.type == py.MOUSEBUTTONDOWN and event.button == 1:
-                # Перетаскивание трубы (при нажатии)
                 for cell in self.cells:
                     self.start_drag_cap(cell, event.pos[0], event.pos[1])
+                    self.start_drag_milk_cap(cell, event.pos[0], event.pos[1])
 
                 # Обработка кликов по кнопкам
                 for cell in self.cells:
@@ -795,13 +869,16 @@ class BrewStation(Station):
             elif event.type == py.MOUSEBUTTONDOWN and event.button == 1:
                 for cell in self.cells:
                     self.start_drag_cap(cell, event.pos[0], event.pos[1])
+                    self.start_drag_milk_cap(cell, event.pos[0], event.pos[1])
             elif event.type == py.MOUSEMOTION:
                 for cell in self.cells:
                     self.update_drag_cap(cell, event.pos[0], event.pos[1])
+                    self.update_drag_milk_cap(cell, event.pos[0], event.pos[1])
 
             elif event.type == py.MOUSEBUTTONUP and event.button == 1:
                 for cell in self.cells:
                     self.stop_drag_cap(cell)
+                    self.stop_drag_milk_cap(cell)
                     if cell.get("is_pouring", False):
                         cell["is_pouring"] = False
                         cell["show_pour_button"] = False
