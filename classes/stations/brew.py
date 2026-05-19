@@ -30,7 +30,7 @@ class BrewStation(Station):
         self.image = py.transform.scale(self.fon_img, (new_w, new_h))
 
         # Звуки молока
-        self.pour_sound = py.mixer.Sound("assets/sounds/sound/gotovka/Заливка_молока.mp3")
+        self.pour_sound = py.mixer.Sound("assets/sounds/sound/gotovka/Заливка_МолокаЭспрессо.mp3")
         self.pour_channel = py.mixer.Channel(1) if py.mixer.get_init() else None
         self.is_sound_playing = False
 
@@ -38,9 +38,14 @@ class BrewStation(Station):
         self.whisk_channel = py.mixer.Channel(2) if py.mixer.get_init() else None
         self.whisk_was_playing = False
 
-        # Звук налива эспрессо (используем тот же, что и для молока)
-        self.pour_espresso_sound = py.mixer.Sound("assets/sounds/sound/gotovka/Заливка_молока.mp3")
+        # Звук налива эспрессо
+        self.pour_espresso_sound = py.mixer.Sound("assets/sounds/sound/gotovka/Заливка_МолокаЭспрессо.mp3")
         self.pour_espresso_channel = py.mixer.Channel(3) if py.mixer.get_init() else None
+
+        # Звук обжарки эспрессо
+        self.roast_sound = py.mixer.Sound("assets/sounds/sound/gotovka/Звук_закипания_кофеварки.mp3")
+        self.roast_channel = py.mixer.find_channel()
+        self.roast_was_playing = False
 
         # Загрузка ингредиентов из БД
         self.type_ingredients = db.get_ingredients_level(globals.id_player)
@@ -138,17 +143,32 @@ class BrewStation(Station):
                 "pour_espresso_progress": 0.0,
                 "target_espresso_progress": 0.0,
 
-                # --- Анимация опускания трубы для эспрессо ---
-                "is_espresso_extending": False,
-                "espresso_extend_start_time": 0,
-                "espresso_pipe_height": 50,
-                "pipe_draggable": False,
-                "pipe_drag": False,
-                "pipe_drag_offset_x": 0,
-                "pipe_drag_offset_y": 0,
-                "pipe_pos": None,
+                # Стакан
+                "cap_draggable": False,
+                "cap_drag": False,
+                "cap_drag_offset_x": 0,
+                "cap_drag_offset_y": 0,
+                "cap_pos": None,
             }
             self.cells.append(cell)
+
+    def start_roast_sound(self):
+        print("start_roast_sound called")
+        if not self.roast_channel or not self.roast_sound:
+            print("no channel or sound")
+            return
+        if not self.sound_manager.sfx_enabled:
+            print("sfx disabled")
+            return
+        vol = self.sound_manager.sfx_volume if self.sound_manager.sfx_enabled else 0.0
+        print(f"volume: {vol}")
+        self.roast_sound.set_volume(vol)
+        self.roast_channel.play(self.roast_sound, loops=-1)
+        print("sound played")
+
+    def stop_roast_sound(self):
+        if self.roast_channel:
+            self.roast_channel.stop()
 
     # ---------- ОБНОВЛЕНИЕ ПРОЦЕССОВ ЭСПРЕССО ----------
     def update_pouring_espresso(self, cell, current_time):
@@ -186,18 +206,19 @@ class BrewStation(Station):
         if elapsed >= 1.0:
             cell["is_espresso_extending"] = False
             cell["espresso_pipe_height"] = 219
-            # Переход к обжарке
             cell["menu_level"] = 4
             cell["is_roasting"] = True
+            self.start_roast_sound()
             cell["roast_progress"] = 0
             cell["roast_start_time"] = current_time
 
-            # ---- Добавляем: позиция трубы и перетаскивание ----
-            if cell["pipe_pos"] is None:
-                cell["pipe_pos"] = (cell["x"] + 125, cell["y"] + 80)
-            cell["pipe_draggable"] = True
-            # -----------------------------------------------
+            # --- Инициализация позиции стакана ---
+            if cell["cap_pos"] is None:
+                glass_img = cell["cap"].image
+                glass_w, glass_h = glass_img.get_width(), glass_img.get_height()
+                cell["cap_pos"] = (cell["x"] + (300 - glass_w) // 2, cell["y"] + 150)
 
+            # Удалите всё, что связано с pipe_pos и pipe_draggable
             print("Труба опущена, начинаем обжарку")
         else:
             progress = elapsed / 1.0
@@ -208,7 +229,13 @@ class BrewStation(Station):
             return
         if "roast_start_time" not in cell:
             cell["roast_start_time"] = current_time
+            self.start_roast_sound()
             return
+
+        # Обновляем громкость в реальном времени (как в других звуках)
+        if self.roast_channel and self.roast_channel.get_busy():
+            vol = self.sound_manager.sfx_volume if self.sound_manager.sfx_enabled else 0.0
+            self.roast_channel.set_volume(vol)
 
         target_progress = cell.get("roast_target_progress", 0)
         stop_position = cell.get("roast_slider_stop_position", 0)
@@ -237,9 +264,14 @@ class BrewStation(Station):
             quality = "отличное" if zone_start <= stop_position <= zone_end else "среднее"
             print(f"Эспрессо обжарен! Порций: {cell['selected_espresso_portion']}, качество: {quality}")
             cell["is_roasting"] = False
-            cell["pipe_draggable"] = True
-            if cell["pipe_pos"] is None:
-                cell["pipe_pos"] = (cell["x"] + 125, cell["y"] + 80)
+            self.stop_roast_sound()
+            # Стакан становится перетаскиваемым
+            cell["cap_draggable"] = True
+            if cell["cap_pos"] is None:
+                glass_img = cell["cap"].image
+                glass_w, glass_h = glass_img.get_width(), glass_img.get_height()
+                cell["cap_pos"] = (cell["x"] + (300 - glass_w) // 2, cell["y"] + 150)
+            # Удалите всё, что связано с pipe_pos и pipe_draggable
 
     # ---------- МЕТОДЫ ОТРИСОВКИ ЭСПРЕССО ----------
     def draw_espresso_slider(self, screen, cell):
@@ -322,32 +354,28 @@ class BrewStation(Station):
         if not cell.get("roast_slider_stopped", False) and not cell.get("is_pouring_espresso", False):
             cell["espresso_stop_button"].draw(screen)
 
-    def start_drag_pipe(self, cell, mouse_x, mouse_y):
-        """Начинаем перетаскивание трубы, если мышь попала в её область"""
-        if not cell.get("pipe_draggable", False):
+    def start_drag_cap(self, cell, mouse_x, mouse_y):
+        if not cell.get("cap_draggable", False):
             return
-        if not cell["pipe_pos"]:
+        if not cell["cap_pos"]:
             return
-        pipe_x, pipe_y = cell["pipe_pos"]
-        pipe_height = cell.get("espresso_pipe_height", 219)
-        pipe_rect = py.Rect(pipe_x, pipe_y, 50, pipe_height)
-        if pipe_rect.collidepoint(mouse_x, mouse_y):
-            cell["pipe_drag"] = True
-            cell["pipe_drag_offset_x"] = mouse_x - pipe_x
-            cell["pipe_drag_offset_y"] = mouse_y - pipe_y
+        cap_x, cap_y = cell["cap_pos"]
+        glass_img = cell["cap"].image
+        cap_rect = py.Rect(cap_x, cap_y, glass_img.get_width(), glass_img.get_height())
+        if cap_rect.collidepoint(mouse_x, mouse_y):
+            cell["cap_drag"] = True
+            cell["cap_drag_offset_x"] = mouse_x - cap_x
+            cell["cap_drag_offset_y"] = mouse_y - cap_y
 
-    def update_drag_pipe(self, cell, mouse_x, mouse_y):
-        """Обновляем позицию трубы при перетаскивании"""
-        if cell.get("pipe_drag", False):
-            new_x = mouse_x - cell["pipe_drag_offset_x"]
-            new_y = mouse_y - cell["pipe_drag_offset_y"]
-            # Можно ограничить перемещение пределами окна, но пока разрешим везде
-            cell["pipe_pos"] = (new_x, new_y)
+    def update_drag_cap(self, cell, mouse_x, mouse_y):
+        if cell.get("cap_drag", False):
+            new_x = mouse_x - cell["cap_drag_offset_x"]
+            new_y = mouse_y - cell["cap_drag_offset_y"]
+            cell["cap_pos"] = (new_x, new_y)
 
-    def stop_drag_pipe(self, cell):
-        """Завершаем перетаскивание"""
-        if cell.get("pipe_drag", False):
-            cell["pipe_drag"] = False
+    def stop_drag_cap(self, cell):
+        if cell.get("cap_drag", False):
+            cell["cap_drag"] = False
 
     def espresso_lvl4_draw(self, screen, cell):
         x, y = cell["x"], cell["y"]
@@ -355,14 +383,10 @@ class BrewStation(Station):
         py.draw.rect(screen, FON, (x + 25, y + 80, 250, 300))
         py.draw.rect(screen, CONTOUR, (x + 25, y + 80, 250, 300), 3)
 
-        # Таймер обжарки
         self.draw_espresso_roast_timer(screen, cell)
 
-        # Рисуем трубу по сохранённым координатам или по умолчанию
-        if cell["pipe_pos"]:
-            pipe_x, pipe_y = cell["pipe_pos"]
-        else:
-            pipe_x, pipe_y = x + 125, y + 80
+        # Труба – как рисовали (можно оставить как есть, если не перетаскивается)
+        pipe_x, pipe_y = x + 125, y + 80
         pipe_height = cell.get("espresso_pipe_height", 219)
         py.draw.rect(screen, PIPE, (pipe_x, pipe_y, 50, pipe_height))
         py.draw.rect(screen, CONTOUR, (pipe_x, pipe_y, 50, pipe_height), 3)
@@ -370,11 +394,15 @@ class BrewStation(Station):
             tip_y = pipe_y + pipe_height - 10
             py.draw.rect(screen, (100, 100, 100), (pipe_x, tip_y, 50, 10))
 
-        # Стакан с заливкой
+        # Стакан – перетаскиваемый
         glass_img = cell["cap"].image
         glass_w, glass_h = glass_img.get_width(), glass_img.get_height()
-        glass_x = x + (300 - glass_w) // 2
-        glass_y = y + 150
+        if cell["cap_pos"]:
+            glass_x, glass_y = cell["cap_pos"]
+        else:
+            glass_x, glass_y = x + (300 - glass_w) // 2, y + 150
+
+        # Заливка эспрессо
         portions = cell["selected_espresso_portion"]
         espresso_color = self.espresso_colors.get(cell["selected_espresso_type"], (110, 59, 9))
         fill_h = int(glass_h * (portions / 4.0))
@@ -382,7 +410,10 @@ class BrewStation(Station):
             fill_rect = py.Rect(glass_x, glass_y + glass_h - fill_h, glass_w, fill_h)
             py.draw.rect(screen, espresso_color, fill_rect)
 
-        cell["cap"].draw(screen)
+        # Отрисовка самого стакана поверх заливки
+        screen.blit(glass_img, (glass_x, glass_y))
+
+        # Если нужна декоративная крышка (cap) – она уже есть в cell["cap"], но мы её уже отрисовали
 
     def draw_espresso_roast_timer(self, screen, cell):
         """Отрисовка таймера обжарки"""
@@ -409,6 +440,9 @@ class BrewStation(Station):
         if self.whisk_sound and self.sound_manager:
             vol = self.sound_manager.sfx_volume if self.sound_manager.sfx_enabled else 0.0
             self.whisk_sound.set_volume(vol)
+        if self.roast_sound and self.sound_manager:  # добавить
+            vol = self.sound_manager.sfx_volume if self.sound_manager.sfx_enabled else 0.0
+            self.roast_sound.set_volume(vol)
 
     def start_pour_sound(self):
         if not self.pour_channel or not self.pour_sound:
@@ -649,7 +683,7 @@ class BrewStation(Station):
             if event.type == py.MOUSEBUTTONDOWN and event.button == 1:
                 # Перетаскивание трубы (при нажатии)
                 for cell in self.cells:
-                    self.start_drag_pipe(cell, event.pos[0], event.pos[1])
+                    self.start_drag_cap(cell, event.pos[0], event.pos[1])
 
                 # Обработка кликов по кнопкам
                 for cell in self.cells:
@@ -739,17 +773,16 @@ class BrewStation(Station):
                                 self.pour_espresso_sound.set_volume(self.sound_manager.sfx_volume)
                                 self.pour_espresso_channel.play(self.pour_espresso_sound, loops=-1)
 
+            elif event.type == py.MOUSEBUTTONDOWN and event.button == 1:
+                for cell in self.cells:
+                    self.start_drag_cap(cell, event.pos[0], event.pos[1])
             elif event.type == py.MOUSEMOTION:
                 for cell in self.cells:
-                    self.update_drag_pipe(cell, event.pos[0], event.pos[1])
+                    self.update_drag_cap(cell, event.pos[0], event.pos[1])
 
             elif event.type == py.MOUSEBUTTONUP and event.button == 1:
-                # Останавливаем перетаскивание для всех ячеек
                 for cell in self.cells:
-                    self.stop_drag_pipe(cell)
-
-                # Обработка отпускания для молока
-                for cell in self.cells:
+                    self.stop_drag_cap(cell)
                     if cell.get("is_pouring", False):
                         cell["is_pouring"] = False
                         cell["show_pour_button"] = False
@@ -766,14 +799,24 @@ class BrewStation(Station):
         if self.whisk_was_playing:
             self.start_whisk_sound()
             self.whisk_was_playing = False
+        if self.roast_was_playing:
+            self.start_roast_sound()
+            self.roast_was_playing = False
 
     def deactivate(self):
         if self.whisk_channel and self.whisk_channel.get_busy():
             self.whisk_was_playing = True
         else:
             self.whisk_was_playing = False
+
+        if self.roast_channel and self.roast_channel.get_busy():
+            self.roast_was_playing = True
+        else:
+            self.roast_was_playing = False
+
         self.stop_pour_sound()
         self.stop_whisk_sound()
         if self.pour_espresso_channel:
             self.pour_espresso_channel.stop()
+        self.stop_roast_sound()
         super().deactivate()

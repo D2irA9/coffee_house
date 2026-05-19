@@ -4,9 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="эспрессо">
+    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="эспрессо (время обжарки)">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/stations/brew.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/stations/brew.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -401,7 +402,15 @@
       <option name="project" value="LOCAL" />
       <updated>1779124047033</updated>
     </task>
-    <option name="localTasksCounter" value="37" />
+    <task id="LOCAL-00037" summary="эспрессо (время обжарки)">
+      <option name="closed" value="true" />
+      <created>1779186990463</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1779186990463</updated>
+    </task>
+    <option name="localTasksCounter" value="38" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -416,7 +425,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="звук/музыка на месте" />
     <MESSAGE value="кнопка выхода, кнопка карточек, отображение станции" />
     <MESSAGE value="отрисовка игрока" />
     <MESSAGE value="отрисовка нпс" />
@@ -441,6 +449,7 @@
     <MESSAGE value="таймер, стакан, порциии(50)" />
     <MESSAGE value="правильное наливка порций (эспрессо)" />
     <MESSAGE value="эспрессо" />
-    <option name="LAST_COMMIT_MESSAGE" value="эспрессо" />
+    <MESSAGE value="эспрессо (время обжарки)" />
+    <option name="LAST_COMMIT_MESSAGE" value="эспрессо (время обжарки)" />
   </component>
 </project>
