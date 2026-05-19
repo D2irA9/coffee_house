@@ -142,12 +142,17 @@ class BrewStation(Station):
                 "is_espresso_extending": False,
                 "espresso_extend_start_time": 0,
                 "espresso_pipe_height": 50,
+                "pipe_draggable": False,
+                "pipe_drag": False,
+                "pipe_drag_offset_x": 0,
+                "pipe_drag_offset_y": 0,
+                "pipe_pos": None,
             }
             self.cells.append(cell)
 
     # ---------- ОБНОВЛЕНИЕ ПРОЦЕССОВ ЭСПРЕССО ----------
     def update_pouring_espresso(self, cell, current_time):
-        """Плавное наполнение стакана эспрессо до целевого уровня (порции)"""
+        """Плавное наполнение стакана эспрессо до целевого уровня"""
         if not cell.get("is_pouring_espresso", False):
             return
 
@@ -175,18 +180,24 @@ class BrewStation(Station):
         cell["pour_espresso_progress"] = progress
 
     def update_espresso_extending(self, cell, current_time):
-        """Анимация опускания трубы для эспрессо (1 сек)"""
         if not cell.get("is_espresso_extending", False):
             return
         elapsed = (current_time - cell["espresso_extend_start_time"]) / 1000.0
         if elapsed >= 1.0:
             cell["is_espresso_extending"] = False
-            cell["espresso_pipe_height"] = 219   # полная высота
-            # Переходим к обжарке
+            cell["espresso_pipe_height"] = 219
+            # Переход к обжарке
             cell["menu_level"] = 4
             cell["is_roasting"] = True
             cell["roast_progress"] = 0
             cell["roast_start_time"] = current_time
+
+            # ---- Добавляем: позиция трубы и перетаскивание ----
+            if cell["pipe_pos"] is None:
+                cell["pipe_pos"] = (cell["x"] + 125, cell["y"] + 80)
+            cell["pipe_draggable"] = True
+            # -----------------------------------------------
+
             print("Труба опущена, начинаем обжарку")
         else:
             progress = elapsed / 1.0
@@ -204,7 +215,20 @@ class BrewStation(Station):
         zone_start = cell.get("ideal_zone_start", 40)
         zone_end = cell.get("ideal_zone_end", 60)
 
-        roast_time = 2.0 if zone_start <= stop_position <= zone_end else 4.0
+        portions = cell["selected_espresso_portion"]
+        if portions == 1:
+            base_time = 20.0
+        elif portions == 2:
+            base_time = 30.0
+        else:
+            base_time = 40.0
+
+        # Ускорение при попадании в зелёную зону (по желанию)
+        if zone_start <= stop_position <= zone_end:
+            roast_time = base_time * 0.8  # быстрее на 20%
+        else:
+            roast_time = base_time
+
         elapsed = (current_time - cell["roast_start_time"]) / 1000.0
         progress = min(target_progress, (elapsed / roast_time) * 100)
         cell["roast_progress"] = progress
@@ -213,24 +237,9 @@ class BrewStation(Station):
             quality = "отличное" if zone_start <= stop_position <= zone_end else "среднее"
             print(f"Эспрессо обжарен! Порций: {cell['selected_espresso_portion']}, качество: {quality}")
             cell["is_roasting"] = False
-            # Никакого сброса – ячейка остаётся в menu_level = 4,
-            # стакан, труба, таймер (на 100%) продолжают отображаться.
-
-            # Сброс состояния ячейки
-            # cell["active_ingredient"] = None
-            # cell["menu_level"] = 0
-            # cell["is_roasting"] = False
-            # cell["roast_slider_progress"] = 0
-            # cell["roast_slider_stopped"] = False
-            # cell["roast_slider_direction"] = 1
-            # cell["roast_target_progress"] = 0
-            # cell["roast_progress"] = 0
-            # cell.pop("roast_start_time", None)
-            # cell.pop("roast_slider_stop_position", None)
-            # cell["selected_espresso_type"] = None
-            # cell["selected_espresso_portion"] = 1
-            # cell["pour_espresso_progress"] = 0.0
-            # cell["espresso_pipe_height"] = 50
+            cell["pipe_draggable"] = True
+            if cell["pipe_pos"] is None:
+                cell["pipe_pos"] = (cell["x"] + 125, cell["y"] + 80)
 
     # ---------- МЕТОДЫ ОТРИСОВКИ ЭСПРЕССО ----------
     def draw_espresso_slider(self, screen, cell):
@@ -243,6 +252,7 @@ class BrewStation(Station):
 
         portions = cell["selected_espresso_portion"]
         if portions == 1:
+
             zone_start, zone_end = 40, 50
         elif portions == 2:
             zone_start, zone_end = 60, 70
@@ -275,7 +285,7 @@ class BrewStation(Station):
         py.draw.rect(screen, (40, 40, 40), (x + 20, timer_y, timer_w, timer_h), 3)
 
     def espresso_lvl3_draw(self, screen, cell):
-        """Уровень 3: ползунок + заливка (прогресс) + кнопка СТОП"""
+        """Уровень 3: ползунок + заливка + кнопка СТОП"""
         x, y = cell["x"], cell["y"]
         pipe_height = cell.get("espresso_pipe_height", 50)
         pipe_y = y + 80
@@ -312,8 +322,34 @@ class BrewStation(Station):
         if not cell.get("roast_slider_stopped", False) and not cell.get("is_pouring_espresso", False):
             cell["espresso_stop_button"].draw(screen)
 
+    def start_drag_pipe(self, cell, mouse_x, mouse_y):
+        """Начинаем перетаскивание трубы, если мышь попала в её область"""
+        if not cell.get("pipe_draggable", False):
+            return
+        if not cell["pipe_pos"]:
+            return
+        pipe_x, pipe_y = cell["pipe_pos"]
+        pipe_height = cell.get("espresso_pipe_height", 219)
+        pipe_rect = py.Rect(pipe_x, pipe_y, 50, pipe_height)
+        if pipe_rect.collidepoint(mouse_x, mouse_y):
+            cell["pipe_drag"] = True
+            cell["pipe_drag_offset_x"] = mouse_x - pipe_x
+            cell["pipe_drag_offset_y"] = mouse_y - pipe_y
+
+    def update_drag_pipe(self, cell, mouse_x, mouse_y):
+        """Обновляем позицию трубы при перетаскивании"""
+        if cell.get("pipe_drag", False):
+            new_x = mouse_x - cell["pipe_drag_offset_x"]
+            new_y = mouse_y - cell["pipe_drag_offset_y"]
+            # Можно ограничить перемещение пределами окна, но пока разрешим везде
+            cell["pipe_pos"] = (new_x, new_y)
+
+    def stop_drag_pipe(self, cell):
+        """Завершаем перетаскивание"""
+        if cell.get("pipe_drag", False):
+            cell["pipe_drag"] = False
+
     def espresso_lvl4_draw(self, screen, cell):
-        """Уровень 4: обжарка (таймер) + труба опущена, стакан полностью залит"""
         x, y = cell["x"], cell["y"]
 
         py.draw.rect(screen, FON, (x + 25, y + 80, 250, 300))
@@ -322,16 +358,19 @@ class BrewStation(Station):
         # Таймер обжарки
         self.draw_espresso_roast_timer(screen, cell)
 
-        # Труба опущена (высота 219)
+        # Рисуем трубу по сохранённым координатам или по умолчанию
+        if cell["pipe_pos"]:
+            pipe_x, pipe_y = cell["pipe_pos"]
+        else:
+            pipe_x, pipe_y = x + 125, y + 80
         pipe_height = cell.get("espresso_pipe_height", 219)
-        pipe_y = y + 80
-        py.draw.rect(screen, PIPE, (x + 125, pipe_y, 50, pipe_height))
-        py.draw.rect(screen, CONTOUR, (x + 125, pipe_y, 50, pipe_height), 3)
+        py.draw.rect(screen, PIPE, (pipe_x, pipe_y, 50, pipe_height))
+        py.draw.rect(screen, CONTOUR, (pipe_x, pipe_y, 50, pipe_height), 3)
         if pipe_height > 50:
             tip_y = pipe_y + pipe_height - 10
-            py.draw.rect(screen, (100, 100, 100), (x + 125, tip_y, 50, 10))
+            py.draw.rect(screen, (100, 100, 100), (pipe_x, tip_y, 50, 10))
 
-        # Стакан с заливкой (полный согласно порциям)
+        # Стакан с заливкой
         glass_img = cell["cap"].image
         glass_w, glass_h = glass_img.get_width(), glass_img.get_height()
         glass_x = x + (300 - glass_w) // 2
@@ -346,7 +385,7 @@ class BrewStation(Station):
         cell["cap"].draw(screen)
 
     def draw_espresso_roast_timer(self, screen, cell):
-        """Отрисовка таймера обжарки (жёлтая полоса до цели)"""
+        """Отрисовка таймера обжарки"""
         x, y = cell["x"], cell["y"]
         timer_y = y + 20
         timer_w = 260
@@ -362,7 +401,7 @@ class BrewStation(Station):
 
         py.draw.rect(screen, (40, 40, 40), (x + 20, timer_y, timer_w, 40), 3)
 
-    # ---------- МЕТОДЫ МОЛОКА (без изменений, но нужны для полноты) ----------
+    # ---------- МЕТОДЫ МОЛОКА ----------
     def update_sound_volume(self):
         if self.pour_sound and self.sound_manager:
             vol = self.sound_manager.sfx_volume if self.sound_manager.sfx_enabled else 0.0
@@ -608,6 +647,11 @@ class BrewStation(Station):
 
         for event in events:
             if event.type == py.MOUSEBUTTONDOWN and event.button == 1:
+                # Перетаскивание трубы (при нажатии)
+                for cell in self.cells:
+                    self.start_drag_pipe(cell, event.pos[0], event.pos[1])
+
+                # Обработка кликов по кнопкам
                 for cell in self.cells:
                     # --- Главное меню ---
                     if cell["active_ingredient"] is None:
@@ -673,7 +717,6 @@ class BrewStation(Station):
                                 print(f"Выбрано порций: {cell['selected_espresso_portion']}")
 
                     elif cell["active_ingredient"] == "espresso" and cell["menu_level"] == 3:
-                        # Кнопка СТОП – останавливаем ползунок и запускаем налив
                         if not cell.get("roast_slider_stopped", False) and cell["espresso_stop_button"].signal(event.pos):
                             zone_start = cell.get("ideal_zone_start", 40)
                             zone_end = cell.get("ideal_zone_end", 60)
@@ -696,8 +739,16 @@ class BrewStation(Station):
                                 self.pour_espresso_sound.set_volume(self.sound_manager.sfx_volume)
                                 self.pour_espresso_channel.play(self.pour_espresso_sound, loops=-1)
 
-            # Отпускание кнопки мыши (только для молока)
+            elif event.type == py.MOUSEMOTION:
+                for cell in self.cells:
+                    self.update_drag_pipe(cell, event.pos[0], event.pos[1])
+
             elif event.type == py.MOUSEBUTTONUP and event.button == 1:
+                # Останавливаем перетаскивание для всех ячеек
+                for cell in self.cells:
+                    self.stop_drag_pipe(cell)
+
+                # Обработка отпускания для молока
                 for cell in self.cells:
                     if cell.get("is_pouring", False):
                         cell["is_pouring"] = False

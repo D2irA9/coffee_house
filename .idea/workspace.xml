@@ -4,11 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="таймер, стакан, порциии(50)">
+    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="эспрессо">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/db.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/db.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/obj.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/obj.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/stations/order.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/stations/order.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/stations/brew.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/stations/brew.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -387,7 +385,23 @@
       <option name="project" value="LOCAL" />
       <updated>1778591528955</updated>
     </task>
-    <option name="localTasksCounter" value="35" />
+    <task id="LOCAL-00035" summary="правильное наливка порций (эспрессо)">
+      <option name="closed" value="true" />
+      <created>1779121434551</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1779121434551</updated>
+    </task>
+    <task id="LOCAL-00036" summary="эспрессо">
+      <option name="closed" value="true" />
+      <created>1779124047033</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1779124047033</updated>
+    </task>
+    <option name="localTasksCounter" value="37" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -402,8 +416,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="19/03/26" />
-    <MESSAGE value="звук в заставке" />
     <MESSAGE value="звук/музыка на месте" />
     <MESSAGE value="кнопка выхода, кнопка карточек, отображение станции" />
     <MESSAGE value="отрисовка игрока" />
@@ -427,6 +439,8 @@
     <MESSAGE value="взбитие" />
     <MESSAGE value="количество порций эспрессо" />
     <MESSAGE value="таймер, стакан, порциии(50)" />
-    <option name="LAST_COMMIT_MESSAGE" value="таймер, стакан, порциии(50)" />
+    <MESSAGE value="правильное наливка порций (эспрессо)" />
+    <MESSAGE value="эспрессо" />
+    <option name="LAST_COMMIT_MESSAGE" value="эспрессо" />
   </component>
 </project>

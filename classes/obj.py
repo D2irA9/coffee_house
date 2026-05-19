@@ -74,7 +74,7 @@ class TicketsOrder:
 
         # Эспрессо
         min_esp = 2
-        max_esp = min(4, capacity - 2)
+        max_esp = min(3, capacity - 2)
         if max_esp < min_esp:
             max_esp = min_esp
         esp_qty = random.randint(min_esp, max_esp)
