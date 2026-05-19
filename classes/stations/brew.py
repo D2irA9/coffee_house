@@ -158,6 +158,7 @@ class BrewStation(Station):
                 "milk_cap_drag_offset_y": 0,
                 "milk_cap_pos": None,
                 "milk_whisking_paused": False,
+                "milk_whisk_pause_start": 0,
             }
             self.cells.append(cell)
 
@@ -174,11 +175,11 @@ class BrewStation(Station):
             cell["milk_cap_drag_offset_x"] = mouse_x - cap_x
             cell["milk_cap_drag_offset_y"] = mouse_y - cap_y
 
-            # Если взбивание активно – ставим на паузу
             if cell.get("is_whisking", False):
                 cell["milk_whisking_paused"] = True
-                self.stop_whisk_sound()  # останавливаем звук
-                self.retract_milk_pipe(cell)  # втягиваем трубу
+                cell["milk_whisk_pause_start"] = py.time.get_ticks()
+                self.stop_whisk_sound()
+                self.retract_milk_pipe(cell)
 
     def update_drag_milk_cap(self, cell, mouse_x, mouse_y):
         if cell.get("milk_cap_drag", False):
@@ -198,9 +199,13 @@ class BrewStation(Station):
 
             # Если взбивание было на паузе – возобновляем
             if cell.get("milk_whisking_paused", False):
+                # Корректируем время начала взбивания, чтобы компенсировать паузу
+                pause_duration = py.time.get_ticks() - cell["milk_whisk_pause_start"]
+                cell["whisk_start_time"] += pause_duration
                 cell["milk_whisking_paused"] = False
-                self.start_whisk_sound()  # возобновляем звук
-                # Трубу не опускаем – остаётся короткой (уже retract_milk_pipe)
+                cell["milk_whisk_pause_start"] = 0
+                self.start_whisk_sound()
+                self.extend_milk_pipe(cell)
 
     def retract_milk_pipe(self, cell):
         """Втягивает трубу молока: укорачивает до 50 пикселей"""
@@ -515,6 +520,10 @@ class BrewStation(Station):
             vol = self.sound_manager.sfx_volume if self.sound_manager.sfx_enabled else 0.0
             self.roast_sound.set_volume(vol)
 
+    def extend_milk_pipe(self, cell):
+        """Опускает трубу молока (вытягивает до полной высоты)"""
+        cell["pipe_height"] = 219
+
     def start_pour_sound(self):
         if not self.pour_channel or not self.pour_sound:
             return
@@ -709,7 +718,7 @@ class BrewStation(Station):
         pipe_height = cell.get("pipe_height", 219)
         py.draw.rect(screen, PIPE, (x + 125, pipe_y, 50, pipe_height))
         py.draw.rect(screen, CONTOUR, (x + 125, pipe_y, 50, pipe_height), 3)
-        if cell["is_whisking"]:
+        if cell["is_whisking"] and not cell.get("milk_whisking_paused", False):
             for i in range(10):
                 bubble_x = x + 40 + random.randint(0, 219)
                 bubble_y = y + 150 + random.randint(0, 219)
@@ -758,6 +767,7 @@ class BrewStation(Station):
     def events(self, events):
         current_time = py.time.get_ticks()
 
+        # Обновление анимаций и процессов
         for cell in self.cells:
             if cell.get("is_pouring", False):
                 self.update_pouring(cell, current_time)
@@ -774,11 +784,12 @@ class BrewStation(Station):
 
         for event in events:
             if event.type == py.MOUSEBUTTONDOWN and event.button == 1:
+                # Перетаскивание стаканов (эспрессо и молока)
                 for cell in self.cells:
                     self.start_drag_cap(cell, event.pos[0], event.pos[1])
                     self.start_drag_milk_cap(cell, event.pos[0], event.pos[1])
 
-                # Обработка кликов по кнопкам
+                # Обработка кликов по кнопкам (интерфейс)
                 for cell in self.cells:
                     # --- Главное меню ---
                     if cell["active_ingredient"] is None:
@@ -866,19 +877,19 @@ class BrewStation(Station):
                                 self.pour_espresso_sound.set_volume(self.sound_manager.sfx_volume)
                                 self.pour_espresso_channel.play(self.pour_espresso_sound, loops=-1)
 
-            elif event.type == py.MOUSEBUTTONDOWN and event.button == 1:
-                for cell in self.cells:
-                    self.start_drag_cap(cell, event.pos[0], event.pos[1])
-                    self.start_drag_milk_cap(cell, event.pos[0], event.pos[1])
             elif event.type == py.MOUSEMOTION:
+                # Обновление перетаскивания стаканов
                 for cell in self.cells:
                     self.update_drag_cap(cell, event.pos[0], event.pos[1])
                     self.update_drag_milk_cap(cell, event.pos[0], event.pos[1])
 
             elif event.type == py.MOUSEBUTTONUP and event.button == 1:
+                # Останавливаем перетаскивание для всех ячеек
                 for cell in self.cells:
                     self.stop_drag_cap(cell)
                     self.stop_drag_milk_cap(cell)
+
+                    # Обработка отпускания для молока (наливка)
                     if cell.get("is_pouring", False):
                         cell["is_pouring"] = False
                         cell["show_pour_button"] = False
