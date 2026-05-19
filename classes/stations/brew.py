@@ -149,6 +149,8 @@ class BrewStation(Station):
                 "cap_drag_offset_x": 0,
                 "cap_drag_offset_y": 0,
                 "cap_pos": None,
+
+                "pipe_pos": None,
             }
             self.cells.append(cell)
 
@@ -211,6 +213,9 @@ class BrewStation(Station):
             self.start_roast_sound()
             cell["roast_progress"] = 0
             cell["roast_start_time"] = current_time
+
+            if cell["pipe_pos"] is None:
+                cell["pipe_pos"] = (cell["x"] + 125, cell["y"] + 80)
 
             # --- Инициализация позиции стакана ---
             if cell["cap_pos"] is None:
@@ -354,6 +359,10 @@ class BrewStation(Station):
         if not cell.get("roast_slider_stopped", False) and not cell.get("is_pouring_espresso", False):
             cell["espresso_stop_button"].draw(screen)
 
+    def retract_pipe(self, cell):
+        """Втягивает трубу: укорачивает и возвращает на исходную позицию"""
+        cell["espresso_pipe_height"] = 50
+
     def start_drag_cap(self, cell, mouse_x, mouse_y):
         if not cell.get("cap_draggable", False):
             return
@@ -366,6 +375,7 @@ class BrewStation(Station):
             cell["cap_drag"] = True
             cell["cap_drag_offset_x"] = mouse_x - cap_x
             cell["cap_drag_offset_y"] = mouse_y - cap_y
+            self.retract_pipe(cell)
 
     def update_drag_cap(self, cell, mouse_x, mouse_y):
         if cell.get("cap_drag", False):
@@ -376,6 +386,12 @@ class BrewStation(Station):
     def stop_drag_cap(self, cell):
         if cell.get("cap_drag", False):
             cell["cap_drag"] = False
+            # Возвращаем стакан в исходное положение
+            glass_img = cell["cap"].image
+            glass_w, glass_h = glass_img.get_width(), glass_img.get_height()
+            original_glass_x = cell["x"] + (300 - glass_w) // 2
+            original_glass_y = cell["y"] + 150
+            cell["cap_pos"] = (original_glass_x, original_glass_y)
 
     def espresso_lvl4_draw(self, screen, cell):
         x, y = cell["x"], cell["y"]
@@ -385,8 +401,11 @@ class BrewStation(Station):
 
         self.draw_espresso_roast_timer(screen, cell)
 
-        # Труба – как рисовали (можно оставить как есть, если не перетаскивается)
-        pipe_x, pipe_y = x + 125, y + 80
+        # Труба – по сохранённой позиции или по умолчанию
+        if cell.get("pipe_pos"):
+            pipe_x, pipe_y = cell["pipe_pos"]
+        else:
+            pipe_x, pipe_y = x + 125, y + 80
         pipe_height = cell.get("espresso_pipe_height", 219)
         py.draw.rect(screen, PIPE, (pipe_x, pipe_y, 50, pipe_height))
         py.draw.rect(screen, CONTOUR, (pipe_x, pipe_y, 50, pipe_height), 3)
