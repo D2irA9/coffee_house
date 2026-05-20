@@ -50,6 +50,10 @@ class BrewStation(Station):
         # Загрузка ингредиентов из БД
         self.type_ingredients = db.get_ingredients_level(globals.id_player)
 
+        # Зона сброса или передачи
+        self.green_rect = py.Rect(350, 620, 70, 50)
+        self.red_rect = py.Rect(780, 620, 70, 50)
+
         # Создание 4-х ячеек
         for i, (x, y) in enumerate(self.cells_pos):
             center_x = x + 114
@@ -162,6 +166,83 @@ class BrewStation(Station):
             }
             self.cells.append(cell)
 
+    def reset_cell(self, cell, discard=False):
+        """
+        Полный сброс ячейки.
+        discard=False – зелёная зона (напиток передаётся в BuildStation).
+        discard=True – красная зона (напиток просто выбрасывается).
+        """
+        # Определяем, какой напиток был в ячейке
+        drink_info = None
+        if cell["active_ingredient"] == "milk" and cell["menu_level"] == 4:
+            drink_info = {
+                "type": "milk",
+                "milk_type": cell.get("selected_milk_type"),
+                "temperature": cell.get("selected_milk_temp"),
+                "portions": int(cell["pour_progress"] * 4),
+                "quality": cell.get("whisk_quality", "normal")
+            }
+        elif cell["active_ingredient"] == "espresso" and cell["menu_level"] == 4:
+            drink_info = {
+                "type": "espresso",
+                "espresso_type": cell.get("selected_espresso_type"),
+                "portions": cell.get("selected_espresso_portion"),
+                "quality": cell.get("espresso_quality", "normal")
+            }
+
+        if drink_info and not discard:
+            # Зелёная зона – передаём напиток
+            if drink_info["type"] == "milk":
+                print(f"Молоко: {drink_info['milk_type']}, температура: {drink_info['temperature']}, порций: {drink_info['portions']}, качество: {drink_info['quality']}")
+                if hasattr(self, 'build_station') and self.build_station:
+                    self.build_station.add_ready_drink(
+                        drink_type="milk",
+                        milk_type=drink_info["milk_type"],
+                        milk_temp=drink_info["temperature"],
+                        portions=drink_info["portions"],
+                        quality=drink_info["quality"]
+                    )
+            elif drink_info["type"] == "espresso":
+                print(f"Эспрессо: {drink_info['espresso_type']}, порций: {drink_info['portions']}, качество: {drink_info['quality']}")
+                if hasattr(self, 'build_station') and self.build_station:
+                    self.build_station.add_ready_drink(
+                        drink_type="espresso",
+                        espresso_type=drink_info["espresso_type"],
+                        portions=drink_info["portions"],
+                        espresso_quality=drink_info["quality"]
+                    )
+        elif drink_info and discard:
+            print("Напиток выброшен (красная зона)")
+
+        # Сброс всех полей ячейки
+        cell["active_ingredient"] = None
+        cell["menu_level"] = 0
+        cell["is_pouring"] = False
+        cell["is_extending"] = False
+        cell["is_whisking"] = False
+        cell["is_roasting"] = False
+        cell["is_pouring_espresso"] = False
+        cell["is_espresso_extending"] = False
+        cell["pour_progress"] = 0.0
+        cell["roast_progress"] = 0.0
+        cell["whisk_progress"] = 0.0
+        cell["milk_cap_draggable"] = False
+        cell["cap_draggable"] = False
+        cell["milk_cap_drag"] = False
+        cell["cap_drag"] = False
+        cell["milk_cap_pos"] = None
+        cell["cap_pos"] = None
+        cell["pipe_pos"] = None
+        cell["espresso_pipe_height"] = 50
+        cell["pipe_height"] = 50
+
+        # Остановить все звуки
+        self.stop_pour_sound()
+        self.stop_whisk_sound()
+        self.stop_roast_sound()
+        if self.pour_espresso_channel:
+            self.pour_espresso_channel.stop()
+
     def start_drag_milk_cap(self, cell, mouse_x, mouse_y):
         if not cell.get("milk_cap_draggable", False):
             return
@@ -187,25 +268,18 @@ class BrewStation(Station):
             new_y = mouse_y - cell["milk_cap_drag_offset_y"]
             cell["milk_cap_pos"] = (new_x, new_y)
 
-    def stop_drag_milk_cap(self, cell):
+    def stop_drag_milk_cap(self, cell, mouse_pos):
         if cell.get("milk_cap_drag", False):
             cell["milk_cap_drag"] = False
-            # Возвращаем стакан в исходное положение
+            if self.green_rect.collidepoint(mouse_pos) or self.red_rect.collidepoint(mouse_pos):
+                discard = self.red_rect.collidepoint(mouse_pos)
+                self.reset_cell(cell, discard)
+                return
             glass_img = cell["cap"].image
             glass_w, glass_h = glass_img.get_width(), glass_img.get_height()
             original_glass_x = cell["x"] + (300 - glass_w) // 2
             original_glass_y = cell["y"] + 150
             cell["milk_cap_pos"] = (original_glass_x, original_glass_y)
-
-            # Если взбивание было на паузе – возобновляем
-            if cell.get("milk_whisking_paused", False):
-                # Корректируем время начала взбивания, чтобы компенсировать паузу
-                pause_duration = py.time.get_ticks() - cell["milk_whisk_pause_start"]
-                cell["whisk_start_time"] += pause_duration
-                cell["milk_whisking_paused"] = False
-                cell["milk_whisk_pause_start"] = 0
-                self.start_whisk_sound()
-                self.extend_milk_pipe(cell)
 
     def retract_milk_pipe(self, cell):
         """Втягивает трубу молока: укорачивает до 50 пикселей"""
@@ -325,9 +399,9 @@ class BrewStation(Station):
         if progress >= target_progress:
             quality = "отличное" if zone_start <= stop_position <= zone_end else "среднее"
             print(f"Эспрессо обжарен! Порций: {cell['selected_espresso_portion']}, качество: {quality}")
+            cell["espresso_quality"] = quality  # <-- сохраняем
             cell["is_roasting"] = False
             self.stop_roast_sound()
-            # Стакан становится перетаскиваемым
             cell["cap_draggable"] = True
             if cell["cap_pos"] is None:
                 glass_img = cell["cap"].image
@@ -440,10 +514,15 @@ class BrewStation(Station):
             new_y = mouse_y - cell["cap_drag_offset_y"]
             cell["cap_pos"] = (new_x, new_y)
 
-    def stop_drag_cap(self, cell):
+    def stop_drag_cap(self, cell, mouse_pos):
         if cell.get("cap_drag", False):
             cell["cap_drag"] = False
-            # Возвращаем стакан в исходное положение
+            # Проверяем попадание в зоны сброса
+            if self.green_rect.collidepoint(mouse_pos) or self.red_rect.collidepoint(mouse_pos):
+                discard = self.red_rect.collidepoint(mouse_pos)
+                self.reset_cell(cell, discard)
+                return
+            # Возврат стакана в исходное положение (если не попал)
             glass_img = cell["cap"].image
             glass_w, glass_h = glass_img.get_width(), glass_img.get_height()
             original_glass_x = cell["x"] + (300 - glass_w) // 2
@@ -613,6 +692,15 @@ class BrewStation(Station):
         if progress >= 100.0:
             cell["is_whisking"] = False
             self.stop_whisk_sound()
+            # Определяем качество по попаданию в зелёную зону
+            zone_start = cell["ideal_zone_start"]
+            zone_end = cell["ideal_zone_end"]
+            if zone_start <= progress <= zone_end:
+                cell["whisk_quality"] = "perfect"
+            elif progress < zone_start:
+                cell["whisk_quality"] = "early"
+            else:
+                cell["whisk_quality"] = "late"
 
     def update_pouring(self, cell, current_time):
         if not cell["is_pouring"]:
@@ -673,8 +761,8 @@ class BrewStation(Station):
             elif cell["active_ingredient"] == "espresso" and cell["menu_level"] == 4:
                 self.espresso_lvl4_draw(screen, cell)
 
-        py.draw.rect(screen, RED, (350, 620, 70, 50), 3)
-        py.draw.rect(screen, GREEN, (780, 620, 70, 50), 3)
+        py.draw.rect(screen, GREEN, (350, 620, 70, 50), 3)
+        py.draw.rect(screen, RED, (780, 620, 70, 50), 3)
 
     def milk_lvl2_draw(self, screen, cell):
         for btn in cell["button_temp_milk"].values():
@@ -886,8 +974,8 @@ class BrewStation(Station):
             elif event.type == py.MOUSEBUTTONUP and event.button == 1:
                 # Останавливаем перетаскивание для всех ячеек
                 for cell in self.cells:
-                    self.stop_drag_cap(cell)
-                    self.stop_drag_milk_cap(cell)
+                    self.stop_drag_cap(cell, event.pos)
+                    self.stop_drag_milk_cap(cell, event.pos)
 
                     # Обработка отпускания для молока (наливка)
                     if cell.get("is_pouring", False):
