@@ -2,11 +2,22 @@ from colors import *
 from globals import *
 from .base import Station
 from ..node import font
+from ..tiled import Map
 
 class BuildStation(Station):
-    def __init__(self):
+    def __init__(self, sound_manager, milk_colors, espresso_colors, syrup_colors):
+        self.sound_manager = sound_manager
+        self.milk_colors = milk_colors
+        self.espresso_colors = espresso_colors
+        self.syrup_colors = syrup_colors
         super().__init__("Сборка")
-        self.ready_drinks = []   # список готовых напитков
+
+        # Список готовых стаканов
+        self.ready_drinks = []
+
+        # Загрузка карты и фона
+        self.map = Map('assets/tiled/tmx/BuildStation.tmx', 48)
+        self.map_loaded = False
 
     def add_ready_drink(self, drink_type, milk_type=None, milk_temp=None, portions=0, quality="normal", espresso_type=None, espresso_quality=None):
         """Сохранение готового напитка для отображения"""
@@ -34,7 +45,11 @@ class BuildStation(Station):
         print(f"BuildStation получил: {drink_info}")
 
     def draw(self, screen):
-        screen.fill(BLUE)
+        if not self.map_loaded:
+            self.map.load_map()
+            self.map_loaded = True
+        self.map.draw_all(screen)
+
         if not self.ready_drinks:
             text = font.text_ret(36, "Нет готовых напитков", WHITE)
             screen.blit(text, (50, 50))

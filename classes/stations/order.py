@@ -11,7 +11,7 @@ class OrderStation(Station):
         self.sound_manager = sound_manager
         self.order = order
         super().__init__("Заказы")
-        self.map = Map('assets/tiled/tmx/coffee_house.tmx', 48, 1)
+        self.map = Map('assets/tiled/tmx/OrderStation.tmx', 48, 1)
         self.map_loaded = False
 
         # Персонажи

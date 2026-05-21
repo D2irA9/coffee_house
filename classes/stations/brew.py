@@ -18,7 +18,7 @@ class BrewStation(Station):
         super().__init__("Приготовление")
 
         #Загрузка карты и фона
-        self.map = Map('assets/tiled/tmx/stations1.tmx', 48)
+        self.map = Map('assets/tiled/tmx/BrewStation.tmx', 48)
         self.map_loaded = False
 
         scale = 3
@@ -760,9 +760,6 @@ class BrewStation(Station):
 
             elif cell["active_ingredient"] == "espresso" and cell["menu_level"] == 4:
                 self.espresso_lvl4_draw(screen, cell)
-
-        py.draw.rect(screen, GREEN, (350, 620, 70, 50), 3)
-        py.draw.rect(screen, RED, (780, 620, 70, 50), 3)
 
     def milk_lvl2_draw(self, screen, cell):
         for btn in cell["button_temp_milk"].values():

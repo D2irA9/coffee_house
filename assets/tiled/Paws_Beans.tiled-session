@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "tmx/stations1.tmx",
+    "activeFile": "tmx/coffee_house.tmx",
     "expandedProjectPaths": [
     ],
     "fileStates": {
@@ -26,8 +26,16 @@
             "scale": 0.75,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 642.6666666666666,
-                "y": 359.99999999999994
+                "x": 1206.6666666666665,
+                "y": 364.66666666666674
+            }
+        },
+        "tmx/fon_station.tmx": {
+            "scale": 0.8059166666666667,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 600.5583703856893,
+                "y": 360.45910453934437
             }
         },
         "tmx/stations.tmx": {
@@ -42,8 +50,8 @@
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 607.3333333333334,
-                "y": 453.99999999999994
+                "x": 619.9999999999999,
+                "y": 459.33333333333326
             }
         },
         "tmx/stations2.tmx": {
@@ -51,7 +59,7 @@
             "selectedLayer": 1,
             "viewCenter": {
                 "x": 599.734630694383,
-                "y": 359.84077841662975
+                "y": 359.31003980539583
             }
         },
         "tmx/stations3.tmx": {
@@ -59,7 +67,7 @@
             "selectedLayer": 1,
             "viewCenter": {
                 "x": 599.734630694383,
-                "y": 359.84077841662975
+                "y": 359.31003980539583
             }
         },
         "tsx/Room_Builder_free_48x48.tsx": {
@@ -80,18 +88,16 @@
     "openFiles": [
         "tsx/Room_Builder_free_48x48.tsx",
         "tsx/my_interior.tsx",
-        "tmx/coffee_house.tmx",
-        "tmx/stations1.tmx",
-        "tmx/stations2.tmx",
-        "tmx/stations3.tmx"
+        "tmx/coffee_house.tmx"
     ],
     "project": "Paws_Beans.tiled-project",
     "recentFiles": [
+        "tmx/coffee_house.tmx",
+        "tmx/stations2.tmx",
+        "tmx/fon_station.tmx",
         "tsx/Room_Builder_free_48x48.tsx",
         "tsx/my_interior.tsx",
-        "tmx/coffee_house.tmx",
         "tmx/stations3.tmx",
-        "tmx/stations2.tmx",
         "tmx/stations1.tmx",
         "tmx/stations.tmx",
         "maps/coffee_house.tmx"

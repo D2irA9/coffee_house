@@ -19,6 +19,8 @@ class TicketsOrder:
         self.milk_sprites = {}
         self.syrup_sprites = {}
 
+        self.tikets = "assets/sprites/buttons/tickets.png"
+
     def set_sprites(self, espresso_sprites, milk_sprites, syrup_sprites):
         self.espresso_sprites = espresso_sprites
         self.milk_sprites = milk_sprites
@@ -158,7 +160,7 @@ class TicketsOrder:
             self._draw_click_indicator(screen)
 
     def _draw_click_indicator(self, screen):
-        x, y = 150, 0
+        x, y = 420, 0
         width, height = 50, 100
         py.draw.rect(screen, ORDER_TICKET, (x, y, width, height))
         py.draw.rect(screen, CONTOUR, (x, y, width, height), 3)

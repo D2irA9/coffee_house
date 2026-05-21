@@ -58,7 +58,7 @@ class StationManager:
         self.stations = {
             "order": OrderStation(sound_manager, self.order),
             "brew": BrewStation(sound_manager, milk_colors, espresso_colors, syrup_colors),
-            "build": BuildStation(),
+            "build": BuildStation(sound_manager, milk_colors, espresso_colors, syrup_colors),
         }
         self.current_station = "order"
 
@@ -86,9 +86,9 @@ class StationManager:
         self.show_right_button = False
 
         self.navigation_map = {
-            "order": {"left": None, "right": "brew"},
+            "order": {"left": "build", "right": "brew"},
             "brew": {"left": "build", "right": "order"},
-            "build": {"left": None, "right": "brew"}
+            "build": {"left": "order", "right": "brew"}
         }
 
         self.connect_stations()
