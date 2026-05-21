@@ -35,15 +35,13 @@ class TicketsOrder:
     def _load_data(self):
         """Загружает данные, доступные на уровне игрока"""
         # Чашки
-        db.cursor.execute("SELECT id, cup, capacity FROM cup_sizes")
+        db.cursor.execute("SELECT id, cup, capacity, color FROM cup_sizes")
         cups = db.cursor.fetchall()
-        # Если в cup_sizes нет level_id, то все чашки доступны с 1 уровня.
-        # При желании можно добавить поле level_id в cup_sizes и фильтровать.
+        print(cups)
         for cup in cups:
             cup['cup'] = cup['cup']
             cup['capacity'] = cup['capacity']
-            # цвет для чашки можно не загружать или добавить позже
-            cup['color'] = (200, 200, 200)  # временно
+            cup['color'] = self._parse_color(cup['color'])
         self.cup_sizes = cups
 
         # Эспрессо
