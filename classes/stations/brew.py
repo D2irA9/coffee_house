@@ -179,7 +179,7 @@ class BrewStation(Station):
                 "type": "milk",
                 "milk_type": cell.get("selected_milk_type"),
                 "temperature": cell.get("selected_milk_temp"),
-                "portions": int(cell["pour_progress"] * 4),
+                "fill_ratio": cell["pour_progress"],
                 "quality": cell.get("whisk_quality", "normal")
             }
         elif cell["active_ingredient"] == "espresso" and cell["menu_level"] == 4:
@@ -191,15 +191,14 @@ class BrewStation(Station):
             }
 
         if drink_info and not discard:
-            # Зелёная зона – передаём напиток
             if drink_info["type"] == "milk":
-                print(f"Молоко: {drink_info['milk_type']}, температура: {drink_info['temperature']}, порций: {drink_info['portions']}, качество: {drink_info['quality']}")
+                print(f"Молоко: {drink_info['milk_type']}, температура: {drink_info['temperature']}, заполнение: {drink_info['fill_ratio']:.2f}, качество: {drink_info['quality']}")
                 if hasattr(self, 'build_station') and self.build_station:
                     self.build_station.add_ready_drink(
                         drink_type="milk",
                         milk_type=drink_info["milk_type"],
                         milk_temp=drink_info["temperature"],
-                        portions=drink_info["portions"],
+                        fill_ratio=drink_info["fill_ratio"],
                         quality=drink_info["quality"]
                     )
             elif drink_info["type"] == "espresso":

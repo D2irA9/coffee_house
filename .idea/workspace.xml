@@ -4,16 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="цвет чашки в тикете">
+    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="цикливые станции, музыка, спрайты, карты">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assets/tiled/Paws_Beans.tiled-session" beforeDir="false" afterPath="$PROJECT_DIR$/assets/tiled/Paws_Beans.tiled-session" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/tiled/tmx/stations1.tmx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/tiled/tmx/stations2.tmx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/tiled/tmx/stations3.tmx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/obj.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/obj.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/stations/brew.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/stations/brew.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/stations/build.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/stations/build.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classes/stations/manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/stations/manager.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -54,19 +49,19 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;Python.db.executor&quot;: &quot;Run&quot;,
-    &quot;Python.main.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Other/code/python/Cate/classes&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.db.executor": "Run",
+    "Python.main.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "C:/Other/code/python/Cate/classes",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Other\code\python\Cate\classes" />
@@ -465,7 +460,15 @@
       <option name="project" value="LOCAL" />
       <updated>1779353992238</updated>
     </task>
-    <option name="localTasksCounter" value="44" />
+    <task id="LOCAL-00044" summary="цикливые станции, музыка, спрайты, карты">
+      <option name="closed" value="true" />
+      <created>1779357907774</created>
+      <option name="number" value="00044" />
+      <option name="presentableId" value="LOCAL-00044" />
+      <option name="project" value="LOCAL" />
+      <updated>1779357907774</updated>
+    </task>
+    <option name="localTasksCounter" value="45" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -473,14 +476,25 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="HEAD" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
           </value>
         </entry>
       </map>
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="не правильно загруженный звук" />
     <MESSAGE value="звук pop" />
     <MESSAGE value="генерация температуры молока" />
     <MESSAGE value="отображение тикета" />
@@ -505,6 +519,7 @@
     <MESSAGE value="перетаскивание стаканов" />
     <MESSAGE value="перенос стаканов" />
     <MESSAGE value="цвет чашки в тикете" />
-    <option name="LAST_COMMIT_MESSAGE" value="цвет чашки в тикете" />
+    <MESSAGE value="цикливые станции, музыка, спрайты, карты" />
+    <option name="LAST_COMMIT_MESSAGE" value="цикливые станции, музыка, спрайты, карты" />
   </component>
 </project>
