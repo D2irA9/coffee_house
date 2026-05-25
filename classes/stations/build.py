@@ -1,7 +1,7 @@
 from colors import *
 from globals import *
 from .base import Station
-from ..node import font
+from ..node import font, ImageButton
 from ..tiled import Map
 import pygame as py
 
@@ -20,21 +20,27 @@ class BuildStation(Station):
         self.map = Map('assets/tiled/tmx/BuildStation.tmx', 48)
         self.map_loaded = False
 
+        scale = 3
+
+        # Фон для стакана
+        orig_fon_cup_img = py.image.load("assets/sprites/buttons/Build_.png").convert_alpha()
+        self.fon_cup_img = py.transform.scale(orig_fon_cup_img, (int(orig_fon_cup_img.get_width() * scale), int(orig_fon_cup_img.get_height() * scale)))
+
         # Сигнал для отображения дисплея с напитками
         self.show_display = True
 
         # Загрузка и масштабирование стакана
+        scale_cup = 1.7
         original_img = py.image.load("assets/sprites/buttons/cap.png").convert_alpha()
-        scale = 2
-        new_w = int(original_img.get_width() * scale)
-        new_h = int(original_img.get_height() * scale)
+        new_w = int(original_img.get_width() * scale_cup)
+        new_h = int(original_img.get_height() * scale_cup)
         self.glass_img = py.transform.scale(original_img, (new_w, new_h))
         self.glass_width = new_w
         self.glass_height = new_h
 
         # Параметры отображения сетки стаканов
         self.start_x = 40
-        self.start_y = 100
+        self.start_y = 65
         self.gap_x = 10
         self.gap_y = 10
         self.columns = 4
@@ -68,12 +74,10 @@ class BuildStation(Station):
 
     def draw_display(self, screen):
         """Отображение области дисплея и готовых стаканов в виде сетки"""
-        py.draw.rect(screen, FON, (0, 150, 1200, 150))
-        py.draw.rect(screen, CONTOUR, (0, 150, 1200, 150), 3)
+        py.draw.rect(screen, FON, (0, 100, 1200, 100))
+        py.draw.rect(screen, CONTOUR, (0, 100, 1200, 100), 3)
 
         if not self.ready_drinks:
-            text = font.text_ret(24, "Нет готовых напитков", WHITE)
-            screen.blit(text, (self.start_x, self.start_y + 30))
             return
 
         for idx, drink in enumerate(self.ready_drinks):
@@ -97,6 +101,14 @@ class BuildStation(Station):
             self.map.load_map()
             self.map_loaded = True
         self.map.draw_all(screen)
+
+        py.draw.rect(screen, (40, 102, 142), (0, 160, 400, 430))
+        py.draw.rect(screen, CONTOUR, (0, 160, 400, 430), 3)
+        screen.blit(self.fon_cup_img, (100, 270))
+
+        py.draw.rect(screen, (40, 102, 142), (800, 160, 400, 430))
+        py.draw.rect(screen, CONTOUR, (800, 160, 400, 430), 3)
+        screen.blit(self.fon_cup_img, (850, 270))
 
         if self.show_display:
             self.draw_display(screen)
