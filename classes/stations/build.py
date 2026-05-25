@@ -18,15 +18,6 @@ class BuildStation(Station):
         self.map = Map('assets/tiled/tmx/BuildStation.tmx', 48)
         self.map_loaded = False
 
-        scale = 3
-        orig_fon_cup_img = py.image.load("assets/sprites/buttons/Build_.png").convert_alpha()
-        self.fon_cup_img = py.transform.scale(orig_fon_cup_img,
-            (int(orig_fon_cup_img.get_width() * scale), int(orig_fon_cup_img.get_height() * scale)))
-        self.fon_cup_width = self.fon_cup_img.get_width()
-        self.fon_cup_height = self.fon_cup_img.get_height()
-
-        self.show_display = True
-
         # Обычный стакан
         scale_cup = 1.7
         original_img = py.image.load("assets/sprites/buttons/cap.png").convert_alpha()
@@ -36,12 +27,12 @@ class BuildStation(Station):
         self.glass_width = new_w
         self.glass_height = new_h
 
-        # Увеличенный стакан для зон приёма и перетаскивания
         drag_scale = 3
-        self.drag_glass_img = py.transform.scale(original_img,
-            (int(original_img.get_width() * drag_scale), int(original_img.get_height() * drag_scale)))
+        self.drag_glass_img = py.transform.scale(original_img,(int(original_img.get_width() * drag_scale), int(original_img.get_height() * drag_scale)))
         self.drag_glass_width = self.drag_glass_img.get_width()
         self.drag_glass_height = self.drag_glass_img.get_height()
+
+        self.show_display = True
 
         # Параметры сетки стаканов
         self.start_x = 40
@@ -58,10 +49,10 @@ class BuildStation(Station):
         self.drag_mouse_pos = (0, 0)
 
         # Зоны приёма
-        self.left_zone_rect = py.Rect(100, 270, self.fon_cup_width, self.fon_cup_height)
-        self.right_zone_rect = py.Rect(850, 270, self.fon_cup_width, self.fon_cup_height)
+        self.left_zone_rect = py.Rect(100, 270, 250, 300)
+        self.right_zone_rect = py.Rect(850, 270, 250, 300)
 
-        # Напитки, которые сейчас находятся в левом и правом стакане
+        # Напитки
         self.left_drink = None
         self.right_drink = None
 
@@ -137,23 +128,22 @@ class BuildStation(Station):
         screen.blit(self.drag_glass_img, (draw_x, draw_y))
 
     def draw_drink_in_zone(self, screen, drink, zone_rect):
-        """Рисует увеличенный стакан с заливкой внутри зоны"""
+        """Рисует увеличенный стакан"""
         if drink is None:
             return
+
+        # Позиция стакана по центру зоны
+        glass_x = zone_rect.x + (zone_rect.width - self.drag_glass_width) // 2
+        glass_y = zone_rect.y + (zone_rect.height - self.drag_glass_height) // 2
 
         # Заливка
         fill_height = int(self.drag_glass_height * drink["fill_ratio"])
         if fill_height > 0:
-            # Позиционируем стакан по центру зоны
-            glass_x = zone_rect.x + (zone_rect.width - self.drag_glass_width) // 2
-            glass_y = zone_rect.y + (zone_rect.height - self.drag_glass_height) // 2
             fill_rect = py.Rect(glass_x, glass_y + self.drag_glass_height - fill_height,
                                 self.drag_glass_width, fill_height)
             py.draw.rect(screen, drink["color"], fill_rect)
 
         # Стакан поверх заливки
-        glass_x = zone_rect.x + (zone_rect.width - self.drag_glass_width) // 2
-        glass_y = zone_rect.y + (zone_rect.height - self.drag_glass_height) // 2
         screen.blit(self.drag_glass_img, (glass_x, glass_y))
 
     def draw(self, screen):
@@ -165,13 +155,15 @@ class BuildStation(Station):
         # Левая область
         py.draw.rect(screen, (40, 102, 142), (0, 160, 400, 430))
         py.draw.rect(screen, CONTOUR, (0, 160, 400, 430), 3)
-        screen.blit(self.fon_cup_img, (100, 270))
+        py.draw.rect(screen, FON, self.left_zone_rect)
+        py.draw.rect(screen, CONTOUR, self.left_zone_rect, 3)
         self.draw_drink_in_zone(screen, self.left_drink, self.left_zone_rect)
 
         # Правая область
         py.draw.rect(screen, (40, 102, 142), (800, 160, 400, 430))
         py.draw.rect(screen, CONTOUR, (800, 160, 400, 430), 3)
-        screen.blit(self.fon_cup_img, (850, 270))
+        py.draw.rect(screen, FON, self.right_zone_rect)
+        py.draw.rect(screen, CONTOUR, self.right_zone_rect, 3)
         self.draw_drink_in_zone(screen, self.right_drink, self.right_zone_rect)
 
         if self.show_display:
