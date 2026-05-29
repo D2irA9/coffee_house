@@ -1,7 +1,6 @@
 import pygame as py
 
 class Label:
-    """Текст"""
     def __init__(self, font_path = 'assets/font/PixelizerBold.ttf'):
         self.font_path = font_path
 
@@ -13,7 +12,6 @@ class Label:
 font = Label()
 
 class Button:
-    """Кнопки с возможностью отображения текста"""
     def __init__(self, width, height, bg_color, pos, text="", text_color=(0,0,0), font_size=24, border_color=(58,58,80), border_width=3):
         self.width = width
         self.height = height
@@ -65,8 +63,6 @@ class Button:
 
 
 class ImageButton:
-    """Кнопка на основе изображения (текстуры) с возможностью текста поверх"""
-
     def __init__(self, image_path, pos, scale=1.0, text="", text_color=(0, 0, 0), font_size=20, text_pos="center"):
         # Загружаем и масштабируем изображение
         self.image_original = py.image.load(image_path).convert_alpha()
@@ -142,7 +138,6 @@ class ImageButton:
         return self
 
 class CircleButton:
-    """Круглые кнопки с текстом"""
     def __init__(self, radius, bg_color, pos, text="", text_color=(0, 0, 0), font_size=20):
         self.radius = radius
         self.bg_color = bg_color
