@@ -4,8 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="Build внешний вид станции">
+    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="цвет вместо спрайта">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/stations/build.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/stations/build.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -488,7 +490,15 @@
       <option name="project" value="LOCAL" />
       <updated>1779743523140</updated>
     </task>
-    <option name="localTasksCounter" value="48" />
+    <task id="LOCAL-00048" summary="цвет вместо спрайта">
+      <option name="closed" value="true" />
+      <created>1779743928338</created>
+      <option name="number" value="00048" />
+      <option name="presentableId" value="LOCAL-00048" />
+      <option name="project" value="LOCAL" />
+      <updated>1779743928338</updated>
+    </task>
+    <option name="localTasksCounter" value="49" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -515,7 +525,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="отображение тикета" />
     <MESSAGE value="отображение тикета с тайменгом" />
     <MESSAGE value="настройки, билет на заказ, кнопки навигации/" />
     <MESSAGE value="кнопки станции &quot;приготовления&quot;" />
@@ -540,6 +549,7 @@
     <MESSAGE value="цикливые станции, музыка, спрайты, карты" />
     <MESSAGE value="отображение стакана с прогрессом с прошлой станции" />
     <MESSAGE value="Build внешний вид станции" />
-    <option name="LAST_COMMIT_MESSAGE" value="Build внешний вид станции" />
+    <MESSAGE value="цвет вместо спрайта" />
+    <option name="LAST_COMMIT_MESSAGE" value="цвет вместо спрайта" />
   </component>
 </project>

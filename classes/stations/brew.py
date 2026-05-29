@@ -6,10 +6,6 @@ from ..node import ImageButton
 import globals, math, random
 
 class BrewStation(Station):
-    """
-    Станция приготовления молочной основы и эспрессо.
-    """
-
     def __init__(self, sound_manager, milk_colors, espresso_colors, syrup_colors):
         self.sound_manager = sound_manager
         self.milk_colors = milk_colors

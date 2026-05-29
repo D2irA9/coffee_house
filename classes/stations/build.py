@@ -56,6 +56,29 @@ class BuildStation(Station):
         self.left_drink = None
         self.right_drink = None
 
+        # Флаг и переменная для выбранного размера
+        self.size_selected = False
+        self.selected_size = None
+
+        # Загрузка фона для кнопок выбора размера
+        size_fon_img = py.image.load("assets/sprites/buttons/fon_cup.png").convert_alpha()
+        self.fon_cup = py.transform.scale(size_fon_img,(int(size_fon_img.get_width() * drag_scale), int(size_fon_img.get_height() * drag_scale)))
+        self.block_center = (600, 350)
+
+        self.size_buttons = []
+        sizes = ["S", "M", "L"]
+        offsets = [-100, 0, 100]
+        for i, size in enumerate(sizes):
+            sprite_path = f"assets/sprites/buttons/{size}.png"
+            pos_x = self.block_center[0] + offsets[i]
+            pos_y = self.block_center[1]
+            # Загружаем кнопку (если файла нет – используем старый способ с текстом)
+
+            btn = ImageButton(sprite_path, (pos_x, pos_y), 3)  # подберите масштаб
+
+            btn.size = size
+            self.size_buttons.append(btn)
+
     def get_glass_rect(self, index):
         row = index // self.columns
         col = index % self.columns
@@ -169,10 +192,26 @@ class BuildStation(Station):
         if self.show_display:
             self.draw_display(screen)
         self.draw_dragged_glass(screen)
+        # ---- Если оба стакана установлены и размер ещё не выбран ----
+        if self.left_drink is not None and self.right_drink is not None and not self.size_selected:
+            # Рисуем фон
+            screen.blit(self.fon_cup, (400, 615))
+            # Рисуем кнопки
+            for btn in self.size_buttons:
+                btn.draw(screen)
 
     def events(self, events):
         for event in events:
             if event.type == py.MOUSEBUTTONDOWN and event.button == 1:
+                if self.left_drink is not None and self.right_drink is not None and not self.size_selected:
+                    for btn in self.size_buttons:
+                        if btn.signal(event.pos):
+                            self.selected_size = btn.size
+                            self.size_selected = True
+                            print(f"Выбран размер стакана: {self.selected_size}")
+                            # TODO: следующий шаг — переход к финальной сборке
+                            # Здесь можно установить флаг show_final_stage = True
+                            return
                 for idx, _ in enumerate(self.ready_drinks):
                     rect = self.get_glass_rect(idx)
                     if rect.collidepoint(event.pos):
