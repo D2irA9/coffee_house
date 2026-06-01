@@ -171,12 +171,15 @@ class BrewStation(Station):
         # Определяем, какой напиток был в ячейке
         drink_info = None
         if cell["active_ingredient"] == "milk" and cell["menu_level"] == 4:
+            portions = int(cell["pour_progress"] * 4)
+            print(f"DEBUG: pour_progress={cell['pour_progress']}, portions={portions}")
             drink_info = {
                 "type": "milk",
                 "milk_type": cell.get("selected_milk_type"),
                 "temperature": cell.get("selected_milk_temp"),
                 "fill_ratio": cell["pour_progress"],
-                "quality": cell.get("whisk_quality", "normal")
+                "quality": cell.get("whisk_quality", "normal"),
+                "portions": portions  # ← добавить
             }
         elif cell["active_ingredient"] == "espresso" and cell["menu_level"] == 4:
             drink_info = {
@@ -195,7 +198,8 @@ class BrewStation(Station):
                         milk_type=drink_info["milk_type"],
                         milk_temp=drink_info["temperature"],
                         fill_ratio=drink_info["fill_ratio"],
-                        quality=drink_info["quality"]
+                        quality=drink_info["quality"],
+                        portions=portions
                     )
             elif drink_info["type"] == "espresso":
                 print(f"Эспрессо: {drink_info['espresso_type']}, порций: {drink_info['portions']}, качество: {drink_info['quality']}")
