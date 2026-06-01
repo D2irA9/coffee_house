@@ -67,14 +67,15 @@ class BuildStation(Station):
 
         self.size_buttons = []
         sizes = ["S", "M", "L"]
-        offsets = [-100, 0, 100]
+        offsets = [-150, -30, 90]
         for i, size in enumerate(sizes):
             sprite_path = f"assets/sprites/buttons/{size}.png"
             pos_x = self.block_center[0] + offsets[i]
             pos_y = self.block_center[1]
             # Загружаем кнопку (если файла нет – используем старый способ с текстом)
 
-            btn = ImageButton(sprite_path, (pos_x, pos_y), 3)  # подберите масштаб
+            btn = ImageButton(sprite_path, (pos_x, 630), 3)
+            print(pos_x, pos_y)
 
             btn.size = size
             self.size_buttons.append(btn)
