@@ -4,10 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="передача порций, отображение сиропов и тд">
+    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="колесо">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/stations/brew.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/stations/brew.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/stations/build.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/stations/build.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/settings.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/tiled.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/tiled.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/game.py" beforeDir="false" afterPath="$PROJECT_DIR$/game.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/globals.py" beforeDir="false" afterPath="$PROJECT_DIR$/globals.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -113,14 +116,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1772434955334</updated>
-    </task>
-    <task id="LOCAL-00004" summary="получение монет">
-      <option name="closed" value="true" />
-      <created>1773305954628</created>
-      <option name="number" value="00004" />
-      <option name="presentableId" value="LOCAL-00004" />
-      <option name="project" value="LOCAL" />
-      <updated>1773305954628</updated>
     </task>
     <task id="LOCAL-00005" summary="Отображение станции заказов">
       <option name="closed" value="true" />
@@ -506,7 +501,15 @@
       <option name="project" value="LOCAL" />
       <updated>1780334097903</updated>
     </task>
-    <option name="localTasksCounter" value="53" />
+    <task id="LOCAL-00053" summary="колесо">
+      <option name="closed" value="true" />
+      <created>1780336445217</created>
+      <option name="number" value="00053" />
+      <option name="presentableId" value="LOCAL-00053" />
+      <option name="project" value="LOCAL" />
+      <updated>1780336445217</updated>
+    </task>
+    <option name="localTasksCounter" value="54" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -533,7 +536,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="кнопки отката" />
     <MESSAGE value="изменения в логике кнопки &quot;принятия заказа&quot;" />
     <MESSAGE value="температура молока" />
     <MESSAGE value="Отрисовка уровня порции" />
@@ -558,6 +560,7 @@
     <MESSAGE value="29/05" />
     <MESSAGE value="расположение кнопок(+дп)" />
     <MESSAGE value="передача порций, отображение сиропов и тд" />
-    <option name="LAST_COMMIT_MESSAGE" value="передача порций, отображение сиропов и тд" />
+    <MESSAGE value="колесо" />
+    <option name="LAST_COMMIT_MESSAGE" value="колесо" />
   </component>
 </project>

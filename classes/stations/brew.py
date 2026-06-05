@@ -419,7 +419,6 @@ class BrewStation(Station):
 
         portions = cell["selected_espresso_portion"]
         if portions == 1:
-
             zone_start, zone_end = 40, 50
         elif portions == 2:
             zone_start, zone_end = 60, 70

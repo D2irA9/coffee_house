@@ -11,4 +11,4 @@ screen = py.display.set_mode((1200, 720))
 id_player = None
 name_player = None
 
-version = "0.1"
+version = "1.0"
