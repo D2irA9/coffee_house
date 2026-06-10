@@ -63,7 +63,7 @@ class OrderStation(Station):
         # ---- Состояния и пути NPC ----
         self.npc_state = 'idle'            # idle, walking_to_chair, sitting, walking_away
         self.path_to_chair = [(530, 120), (530, 140), (420, 140), (420, 220)]
-        self.leave_path = [(420, 140), (240, 140), (545, 90)]
+        self.leave_path = [(420, 140), (240, 140), (240, 70)]
         self.sit_duration = 3000
         self.sit_start_time = 0
 
@@ -110,7 +110,6 @@ class OrderStation(Station):
         self.order_active = False
 
     def add_completed_drink(self, drink_data):
-        """Вызывается, когда игрок кликнул по готовому напитку."""
         if not self.order.current_order:
             print("Нет активного заказа")
             self.submitted_drink = None
@@ -118,31 +117,17 @@ class OrderStation(Station):
             return
 
         order = self.order.current_order
+        print("=== DRINK DATA ===")
+        print(drink_data)
+        print("=== ORDER ===")
+        print(order)
+
         is_correct, result_score, match_percentage, total_matches, total_checks = self.compare_with_order(drink_data, order)
-
-        # ========== СОХРАНЕНИЕ СТАТИСТИКИ В БД ==========
-        # Формируем данные в том же формате, что и в старом проекте
         self.save_order_result(drink_data, order, match_percentage, result_score)
-        # =================================================
-
-        # Далее идёт проверка для вывода сообщения (можно оставить как есть)
-        left = drink_data.get('left_drink')
-        right = drink_data.get('right_drink')
-        def find_ingredient(ing_type):
-            if left and left['type'] == ing_type:
-                return left
-            if right and right['type'] == ing_type:
-                return right
-            return None
 
         size_match = (drink_data['size'] == order['cup']['cup'])
-        espresso = find_ingredient('espresso')
-        espresso_match = espresso and (espresso['espresso_type'] == order['espresso']['type'] and
-                                       espresso['portions'] == order['espresso']['portions'])
-        milk = find_ingredient('milk')
-        milk_match = milk and (milk['milk_type'] == order['milk']['type'] and
-                               milk['temperature'] == order['milk']['temp'] and
-                               milk['portions'] == order['milk']['portions'])
+        milk_match = (drink_data.get('milk_portions', 0) == order['milk']['portions'])
+        espresso_match = (drink_data.get('espresso_portions', 0) == order['espresso']['portions'])
         order_syrups = [order['syrup']['name']] if order.get('syrup') else []
         syrups_match = set(order_syrups).issubset(set(drink_data.get('syrups', [])))
 
@@ -157,21 +142,37 @@ class OrderStation(Station):
         else:
             print("❌ Напиток не соответствует заказу!")
 
-        # Запускаем прощание NPC
         if self.npc and self.npc_state == 'idle':
             self.start_npc_farewell()
 
         self.submitted_drink = None
         self.submitted_drink_rect = None
 
-    def start_npc_farewell(self):
-        if self.npc_state != 'idle':
-            return
-        self.npc_state = 'walking_to_chair'
-        self.npc.set_path(self.path_to_chair)
-        self.order_active = False
+    def compare_with_order(self, drink_data, order):
+        size_match = (drink_data['size'] == order['cup']['cup'])
+        milk_match = (drink_data.get('milk_portions', 0) == order['milk']['portions'])
+        espresso_match = (drink_data.get('espresso_portions', 0) == order['espresso']['portions'])
+        order_syrups = [order['syrup']['name']] if order.get('syrup') else []
+        syrups_match = set(order_syrups).issubset(set(drink_data.get('syrups', [])))
+        matches = [size_match, espresso_match, milk_match, syrups_match]
+        total_matches = sum(matches)
+        total_checks = len(matches)
+        match_percentage = (total_matches / total_checks) * 100 if total_checks > 0 else 0
+        if match_percentage >= 80:
+            result_score = 3
+            is_correct = True
+        elif match_percentage >= 60:
+            result_score = 2
+            is_correct = True
+        elif match_percentage >= 40:
+            result_score = 1
+            is_correct = False
+        else:
+            result_score = 0
+            is_correct = False
+        print(f"РЕЗУЛЬТАТ: {total_matches}/{total_checks} ({match_percentage:.0f}%) - Оценка: {result_score}")
+        return is_correct, result_score, match_percentage, total_matches, total_checks
 
-    # ----------------- Сохранение статистики -----------------
     def save_order_result(self, drink_data, original_order, match_percentage, result_score):
         if not db:
             print("База данных не подключена")
@@ -180,46 +181,18 @@ class OrderStation(Station):
         try:
             from globals import id_player
 
-            left = drink_data.get('left_drink')
-            right = drink_data.get('right_drink')
-
             completed_drink = {
                 "size": drink_data.get("size"),
                 "fill_ratio": drink_data.get("fill_ratio"),
                 "color": drink_data.get("color"),
-                "syrups": drink_data.get("syrups", [])
+                "syrups": drink_data.get("syrups", []),
+                "milk_portions": drink_data.get("milk_portions", 0),
+                "espresso_portions": drink_data.get("espresso_portions", 0)
             }
-
-            # Добавляем молоко
-            milk = None
-            if left and left['type'] == 'milk':
-                milk = left
-            elif right and right['type'] == 'milk':
-                milk = right
-            if milk:
-                completed_drink["milk"] = {
-                    "type": milk.get("milk_type"),
-                    "portions": milk.get("portions"),
-                    "temperature": milk.get("temperature")
-                }
-
-            # Добавляем эспрессо
-            espresso = None
-            if left and left['type'] == 'espresso':
-                espresso = left
-            elif right and right['type'] == 'espresso':
-                espresso = right
-            if espresso:
-                completed_drink["espresso"] = {
-                    "type": espresso.get("espresso_type"),
-                    "portions": espresso.get("portions"),
-                    "quality": espresso.get("quality", "normal")
-                }
 
             if original_order.get('syrup'):
                 completed_drink["syrup"] = original_order['syrup']['name']
 
-            # ✅ Сохраняем original_order без изменений
             order_data = {
                 "original_order": original_order,
                 "completed_drink": completed_drink,
@@ -246,6 +219,12 @@ class OrderStation(Station):
             traceback.print_exc()
             return False
 
+    def start_npc_farewell(self):
+        if self.npc_state != 'idle':
+            return
+        self.npc_state = 'walking_to_chair'
+        self.npc.set_path(self.path_to_chair)
+        self.order_active = False
 
     # ----------------- Обновление состояния NPC -----------------
     def update_npc_state(self):
@@ -273,49 +252,6 @@ class OrderStation(Station):
                 self.order.reset()
             print("Новый NPC появился")
 
-    # ----------------- Сравнение заказа -----------------
-    def compare_with_order(self, drink_data, order):
-        size_match = (drink_data['size'] == order['cup']['cup'])
-        left = drink_data.get('left_drink')
-        right = drink_data.get('right_drink')
-        def find_ingredient(ing_type):
-            if left and left['type'] == ing_type:
-                return left
-            if right and right['type'] == ing_type:
-                return right
-            return None
-        espresso = find_ingredient('espresso')
-        espresso_match = False
-        if espresso:
-            espresso_match = (espresso['espresso_type'] == order['espresso']['type'] and
-                              espresso['portions'] == order['espresso']['portions'])
-        milk = find_ingredient('milk')
-        milk_match = False
-        if milk:
-            milk_match = (milk['milk_type'] == order['milk']['type'] and
-                          milk['temperature'] == order['milk']['temperature'] and
-                          milk['portions'] == order['milk']['portions'])
-        order_syrups = [order['syrup']['name']] if order.get('syrup') else []
-        syrups_match = set(order_syrups).issubset(set(drink_data.get('syrups', [])))
-        matches = [size_match, espresso_match, milk_match, syrups_match]
-        total_matches = sum(matches)
-        total_checks = len(matches)
-        match_percentage = (total_matches / total_checks) * 100 if total_checks > 0 else 0
-        if match_percentage >= 80:
-            result_score = 3
-            is_correct = True
-        elif match_percentage >= 60:
-            result_score = 2
-            is_correct = True
-        elif match_percentage >= 40:
-            result_score = 1
-            is_correct = False
-        else:
-            result_score = 0
-            is_correct = False
-        print(f"РЕЗУЛЬТАТ: {total_matches}/{total_checks} ({match_percentage:.0f}%) - Оценка: {result_score}")
-        return is_correct, result_score, match_percentage, total_matches, total_checks
-
     # ----------------- Отрисовка и события -----------------
     def draw(self, screen):
         if not self.map_loaded:
@@ -329,9 +265,7 @@ class OrderStation(Station):
         for i in range(self.split_player, self.split_nps):
             self.map.draw_layer(screen, i)
 
-        self.update_npc_state()
-        self.npc.update()
-        self.npc.draw(screen)
+
 
         now = py.time.get_ticks()
 
@@ -401,6 +335,10 @@ class OrderStation(Station):
 
         for i in range(self.split_nps, len(self.map.layers)):
             self.map.draw_layer(screen, i)
+
+        self.update_npc_state()
+        self.npc.update()
+        self.npc.draw(screen)
 
     def events(self, events):
         for event in events:
