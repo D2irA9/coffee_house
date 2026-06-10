@@ -153,18 +153,10 @@ class OrderStation(Station):
 
         # После проверки запускаем таймер сидения NPC
         if self.npc and not self.npc_leaving:
-            self.start_npc_leaving()
+            self.start_npc_sitting()
 
         self.submitted_drink = None
         self.submitted_drink_rect = None
-
-    def start_npc_leaving(self):
-        """Немедленно отправить NPC уходить (без ожидания таймера)"""
-        if self.npc and not self.npc_leaving:
-            self.npc_leaving = True
-            self.npc_sit_timer = None
-            self.npc.set_path(self.leave_path)
-            self.order_active = False
 
     def start_npc_sitting(self):
         """Сажает NPC и запускает таймер 5 секунд"""
@@ -175,35 +167,30 @@ class OrderStation(Station):
             self.npc_leaving = False
 
     def update_npc_state(self):
-        """Обновляет состояние NPC: идёт -> садится -> через 5 сек уходит"""
+        """Обновление состояния NPC: сидение -> уход -> смена NPC"""
         if not self.npc:
             return
 
-        # 1. Если NPC закончил путь и ещё не сидит и не уходит – садим его
-        if (self.npc.is_path_finished() and not self.npc_leaving and self.npc_sit_timer is None):
-            self.npc.sit_down('sit_left')
-            self.npc_sit_timer = py.time.get_ticks()
-            self.order_active = True     # разрешаем брать заказы (кнопка появится)
-            print("NPC сел, теперь можно брать заказ")
-
-        # 2. Если NPC сидит и прошло 5 секунд – отправляем уходить
-        if (self.npc_sit_timer is not None and not self.npc_leaving):
+        # Если NPC сидит и таймер истёк – отправляем уходить
+        if self.npc_sit_timer is not None and not self.npc_leaving:
             now = py.time.get_ticks()
             if now - self.npc_sit_timer >= 5000:   # 5 секунд
-                self.start_npc_leaving()
-                print("NPC посидел 5 секунд и уходит")
+                self.npc_leaving = True
+                self.npc_sit_timer = None
+                self.npc.set_path(self.leave_path)
+                # после этого NPC начнёт движение по обратному пути
 
-        # 3. Если NPC уходит и завершил путь – загружаем нового
+        # Если NPC уходит и завершил путь – загружаем нового
         if self.npc_leaving and self.npc.is_path_finished():
-            self._load_random_npc()
-            self.order_active = True
+            self._load_random_npc()      # новый NPC
+            self.order_active = True     # разрешаем заказы
+            self.npc_leaving = False
             self.order.current_order = None
             self.callout_show = False
             self.animation_index = -1
             self.animation_timer = 0
             if hasattr(self.order, 'reset'):
                 self.order.reset()
-            print("Новый NPC появился")
 
     def compare_with_order(self, drink_data, order):
         # ... оставляем как было, без изменений ...
