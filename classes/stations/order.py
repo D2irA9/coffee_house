@@ -18,7 +18,7 @@ class OrderStation(Station):
         self.player = Character(3, (530, 60), 'assets/sprites/characters/player/Adam.png', [(530, 60)])
         self.split_player = 2
 
-        # Nps
+        # Npc
         self.npc = None
         self._load_random_npc()
         self.split_nps = 4
@@ -28,13 +28,13 @@ class OrderStation(Station):
         self.interact_btn_show = False
         self.order_active = True
 
-        # Изображение callout
+        # Callout (облачко с заказом)
         self.callout_img = py.image.load("assets/sprites/characters/nps/interactive/callout.png").convert_alpha()
         self.callout_img = py.transform.scale(self.callout_img, (self.callout_img.get_width() * 3, self.callout_img.get_height() * 3))
         self.callout_rect = self.callout_img.get_rect(topleft=(545, 90))
         self.callout_show = False
 
-        # Анимация показа
+        # Анимация показа заказа
         self.animation_index = -1
         self.animation_timer = 0
 
@@ -43,31 +43,31 @@ class OrderStation(Station):
         self.milk_sprites = self._load_sprites("assets/sprites/ingredients/milk")
         self.syrup_sprites = self._load_sprites("assets/sprites/ingredients/syrup")
 
-        # Заказ
         self.order.set_sprites(
             espresso_sprites=self.espresso_sprites,
             milk_sprites=self.milk_sprites,
             syrup_sprites=self.syrup_sprites
         )
 
-        # ---- Загрузка увеличенного стакана для отображения переданного напитка ----
+        # ---- Стакан для переданного напитка ----
         scale_cup = 1.7
         original_img = py.image.load("assets/sprites/buttons/cap.png").convert_alpha()
         self.submitted_glass_img = py.transform.scale(original_img,
                                                       (int(original_img.get_width() * scale_cup),
                                                        int(original_img.get_height() * scale_cup)))
         self.submitted_glass_width, self.submitted_glass_height = self.submitted_glass_img.get_size()
-
         self.submitted_drink_zone_rect = py.Rect(20, 270, self.submitted_glass_width + 20, self.submitted_glass_height + 20)
-
         self.submitted_drink = None
         self.submitted_drink_rect = None
 
-        # Состояние NPC
-        self.npc_sit_timer = None          # время начала сидения
-        self.npc_leaving = False
-        self.leave_path = [(420, 140), (530, 140), (240, 140), (240, 0)]   # путь ухода
+        # ---- Состояния и пути NPC ----
+        self.npc_state = 'idle'            # idle, walking_to_chair, sitting, walking_away
+        self.path_to_chair = [(530, 120), (530, 140), (420, 140), (420, 220)]
+        self.leave_path = [(420, 140), (240, 140), (545, 90)]
+        self.sit_duration = 3000
+        self.sit_start_time = 0
 
+    # ----------------- Вспомогательные методы -----------------
     def _play_npc_sound(self):
         if self.sound_manager.sfx_enabled:
             vol = self.sound_manager.sfx_volume
@@ -101,28 +101,31 @@ class OrderStation(Station):
 
         path = [(240, 140), (530, 140), (530, 120)]
         self.npc = Character(3, (240, 0), sprite_path, path)
-        self.npc_sit_timer = None
-        self.npc_leaving = False
+        self.npc_state = 'idle'
+        self.sit_start_time = 0
 
+    # ----------------- Приём и проверка заказа -----------------
     def receive_drink(self, drink_data):
         self.submitted_drink = drink_data
         self.order_active = False
 
     def add_completed_drink(self, drink_data):
-        npc_name = self.current_nps_info['db_name'] if hasattr(self, 'current_nps_info') else "Unknown"
+        """Вызывается, когда игрок кликнул по готовому напитку."""
         if not self.order.current_order:
             print("Нет активного заказа")
             self.submitted_drink = None
             self.order_active = True
-            if self.npc and self.npc.is_path_finished() and not self.npc_leaving:
-                self.start_npc_sitting()
             return
 
         order = self.order.current_order
         is_correct, result_score, match_percentage, total_matches, total_checks = self.compare_with_order(drink_data, order)
 
-        # здесь можно сохранить статистику, пока пропускаем
+        # ========== СОХРАНЕНИЕ СТАТИСТИКИ В БД ==========
+        # Формируем данные в том же формате, что и в старом проекте
+        self.save_order_result(drink_data, order, match_percentage, result_score)
+        # =================================================
 
+        # Далее идёт проверка для вывода сообщения (можно оставить как есть)
         left = drink_data.get('left_drink')
         right = drink_data.get('right_drink')
         def find_ingredient(ing_type):
@@ -134,9 +137,12 @@ class OrderStation(Station):
 
         size_match = (drink_data['size'] == order['cup']['cup'])
         espresso = find_ingredient('espresso')
-        espresso_match = espresso and (espresso['espresso_type'] == order['espresso']['type'] and espresso['portions'] == order['espresso']['portions'])
+        espresso_match = espresso and (espresso['espresso_type'] == order['espresso']['type'] and
+                                       espresso['portions'] == order['espresso']['portions'])
         milk = find_ingredient('milk')
-        milk_match = milk and (milk['milk_type'] == order['milk']['type'] and milk['temperature'] == order['milk']['temp'] and milk['portions'] == order['milk']['portions'])
+        milk_match = milk and (milk['milk_type'] == order['milk']['type'] and
+                               milk['temperature'] == order['milk']['temp'] and
+                               milk['portions'] == order['milk']['portions'])
         order_syrups = [order['syrup']['name']] if order.get('syrup') else []
         syrups_match = set(order_syrups).issubset(set(drink_data.get('syrups', [])))
 
@@ -151,49 +157,124 @@ class OrderStation(Station):
         else:
             print("❌ Напиток не соответствует заказу!")
 
-        # После проверки запускаем таймер сидения NPC
-        if self.npc and not self.npc_leaving:
-            self.start_npc_sitting()
+        # Запускаем прощание NPC
+        if self.npc and self.npc_state == 'idle':
+            self.start_npc_farewell()
 
         self.submitted_drink = None
         self.submitted_drink_rect = None
 
-    def start_npc_sitting(self):
-        """Сажает NPC и запускает таймер 5 секунд"""
-        if self.npc and not self.npc_leaving:
-            self.npc.sit_down('sit_left')
-            self.npc_sit_timer = py.time.get_ticks()
-            self.order_active = False
-            self.npc_leaving = False
+    def start_npc_farewell(self):
+        if self.npc_state != 'idle':
+            return
+        self.npc_state = 'walking_to_chair'
+        self.npc.set_path(self.path_to_chair)
+        self.order_active = False
 
+    # ----------------- Сохранение статистики -----------------
+    def save_order_result(self, drink_data, original_order, match_percentage, result_score):
+        if not db:
+            print("База данных не подключена")
+            return False
+
+        try:
+            from globals import id_player
+
+            left = drink_data.get('left_drink')
+            right = drink_data.get('right_drink')
+
+            completed_drink = {
+                "size": drink_data.get("size"),
+                "fill_ratio": drink_data.get("fill_ratio"),
+                "color": drink_data.get("color"),
+                "syrups": drink_data.get("syrups", [])
+            }
+
+            # Добавляем молоко
+            milk = None
+            if left and left['type'] == 'milk':
+                milk = left
+            elif right and right['type'] == 'milk':
+                milk = right
+            if milk:
+                completed_drink["milk"] = {
+                    "type": milk.get("milk_type"),
+                    "portions": milk.get("portions"),
+                    "temperature": milk.get("temperature")
+                }
+
+            # Добавляем эспрессо
+            espresso = None
+            if left and left['type'] == 'espresso':
+                espresso = left
+            elif right and right['type'] == 'espresso':
+                espresso = right
+            if espresso:
+                completed_drink["espresso"] = {
+                    "type": espresso.get("espresso_type"),
+                    "portions": espresso.get("portions"),
+                    "quality": espresso.get("quality", "normal")
+                }
+
+            if original_order.get('syrup'):
+                completed_drink["syrup"] = original_order['syrup']['name']
+
+            # ✅ Сохраняем original_order без изменений
+            order_data = {
+                "original_order": original_order,
+                "completed_drink": completed_drink,
+                "percentage_matches": match_percentage
+            }
+
+            npc_name = self.current_nps_info['db_name'] if hasattr(self, 'current_nps_info') else "Unknown"
+            stat_id = db.add_statistics(
+                id_player=id_player,
+                npc_name=npc_name,
+                order_data=order_data,
+                result=result_score
+            )
+
+            if stat_id:
+                print(f"Статистика сохранена (ID: {stat_id})")
+            else:
+                print("Статистика НЕ сохранена")
+            return stat_id is not None
+
+        except Exception as e:
+            print(f"Ошибка сохранения статистики: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+
+
+    # ----------------- Обновление состояния NPC -----------------
     def update_npc_state(self):
-        """Обновление состояния NPC: сидение -> уход -> смена NPC"""
         if not self.npc:
             return
-
-        # Если NPC сидит и таймер истёк – отправляем уходить
-        if self.npc_sit_timer is not None and not self.npc_leaving:
+        if self.npc_state == 'walking_to_chair' and self.npc.is_path_finished():
+            self.npc.sit_down('sit_left')
+            self.npc_state = 'sitting'
+            self.sit_start_time = py.time.get_ticks()
+            print("NPC сел на стул")
+        if self.npc_state == 'sitting':
             now = py.time.get_ticks()
-            if now - self.npc_sit_timer >= 5000:   # 5 секунд
-                self.npc_leaving = True
-                self.npc_sit_timer = None
+            if now - self.sit_start_time >= self.sit_duration:
+                self.npc_state = 'walking_away'
                 self.npc.set_path(self.leave_path)
-                # после этого NPC начнёт движение по обратному пути
-
-        # Если NPC уходит и завершил путь – загружаем нового
-        if self.npc_leaving and self.npc.is_path_finished():
-            self._load_random_npc()      # новый NPC
-            self.order_active = True     # разрешаем заказы
-            self.npc_leaving = False
+                print("NPC встал и пошёл к выходу")
+        if self.npc_state == 'walking_away' and self.npc.is_path_finished():
+            self._load_random_npc()
+            self.order_active = True
             self.order.current_order = None
             self.callout_show = False
             self.animation_index = -1
             self.animation_timer = 0
             if hasattr(self.order, 'reset'):
                 self.order.reset()
+            print("Новый NPC появился")
 
+    # ----------------- Сравнение заказа -----------------
     def compare_with_order(self, drink_data, order):
-        # ... оставляем как было, без изменений ...
         size_match = (drink_data['size'] == order['cup']['cup'])
         left = drink_data.get('left_drink')
         right = drink_data.get('right_drink')
@@ -212,7 +293,7 @@ class OrderStation(Station):
         milk_match = False
         if milk:
             milk_match = (milk['milk_type'] == order['milk']['type'] and
-                          milk['temperature'] == order['milk']['temp'] and
+                          milk['temperature'] == order['milk']['temperature'] and
                           milk['portions'] == order['milk']['portions'])
         order_syrups = [order['syrup']['name']] if order.get('syrup') else []
         syrups_match = set(order_syrups).issubset(set(drink_data.get('syrups', [])))
@@ -235,12 +316,12 @@ class OrderStation(Station):
         print(f"РЕЗУЛЬТАТ: {total_matches}/{total_checks} ({match_percentage:.0f}%) - Оценка: {result_score}")
         return is_correct, result_score, match_percentage, total_matches, total_checks
 
+    # ----------------- Отрисовка и события -----------------
     def draw(self, screen):
         if not self.map_loaded:
             self.map.load_map()
             self.map_loaded = True
 
-        # нижние слои
         for i in range(self.split_player):
             self.map.draw_layer(screen, i)
         self.player.update()
@@ -248,9 +329,7 @@ class OrderStation(Station):
         for i in range(self.split_player, self.split_nps):
             self.map.draw_layer(screen, i)
 
-        # обновляем состояние NPC (сидение, уход)
         self.update_npc_state()
-
         self.npc.update()
         self.npc.draw(screen)
 
@@ -299,16 +378,14 @@ class OrderStation(Station):
                     syrup_rect = syrup_icon.get_rect(center=(self.callout_rect.centerx, 130))
                     screen.blit(syrup_icon, syrup_rect)
 
-        # Кнопка заказа
-        if (not self.callout_show and self.npc and self.npc.is_path_finished() and
-            self.order_active and not self.npc_leaving and self.npc_sit_timer is None):
+        if (not self.callout_show and self.npc and self.npc.is_path_finished()
+                and self.order_active and self.npc_state == 'idle'):
             self.interact_btn_show = True
         else:
             self.interact_btn_show = False
         if self.interact_btn_show:
             self.interact_btn.draw(screen)
 
-        # Рисуем переданный напиток
         if self.submitted_drink:
             py.draw.rect(screen, FON, self.submitted_drink_zone_rect)
             py.draw.rect(screen, CONTOUR, self.submitted_drink_zone_rect, 3)
@@ -322,7 +399,6 @@ class OrderStation(Station):
             screen.blit(self.submitted_glass_img, (glass_x, glass_y))
             self.submitted_drink_rect = py.Rect(glass_x, glass_y, self.submitted_glass_width, self.submitted_glass_height)
 
-        # Верхние слои
         for i in range(self.split_nps, len(self.map.layers)):
             self.map.draw_layer(screen, i)
 
@@ -336,6 +412,5 @@ class OrderStation(Station):
                     self.callout_show = True
                     self.animation_index = -1
                     self.animation_timer = 0
-
                 if self.submitted_drink and self.submitted_drink_rect and self.submitted_drink_rect.collidepoint(event.pos):
                     self.add_completed_drink(self.submitted_drink)

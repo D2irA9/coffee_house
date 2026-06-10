@@ -89,7 +89,7 @@ class TicketsOrder:
         espresso = random.choice(self.espresso_types) if self.espresso_types else None
         milk = random.choice(self.milk_types) if self.milk_types else None
         syrup = random.choice(self.syrups) if self.syrups else None
-        milk_temperature = random.choice(["горячее", "холодное"])
+        milk_temperature = random.choice(["hot", "cold"])
 
         self.current_order = {
             'cup': {

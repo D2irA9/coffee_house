@@ -423,11 +423,13 @@ class BuildStation(Station):
                         if it.get('id') == target_side:
                             it['portions'] = new_portions
                             break
+        elif item['type'] == 'syrup':
+            item['used'] = True
+
         self.pouring = False
         self.pouring_item = None
         self.dragging_ingredient = None
         self.drag_ingredient_icon = None
-
     def complete_drink(self):
         if not self.order_station:
             print("Ошибка: OrderStation не подключена")

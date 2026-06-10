@@ -4,9 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="10/06/26">
+    <list default="true" id="8629b07b-f50e-4cc9-9493-b50ab370b30a" name="Changes" comment="путь не до конца">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/tiled/Paws_Beans.tiled-session" beforeDir="false" afterPath="$PROJECT_DIR$/assets/tiled/Paws_Beans.tiled-session" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/db.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/db.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classes/obj.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/obj.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classes/stations/order.py" beforeDir="false" afterPath="$PROJECT_DIR$/classes/stations/order.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -112,14 +116,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1772434955334</updated>
-    </task>
-    <task id="LOCAL-00007" summary="+Настройки">
-      <option name="closed" value="true" />
-      <created>1773389946813</created>
-      <option name="number" value="00007" />
-      <option name="presentableId" value="LOCAL-00007" />
-      <option name="project" value="LOCAL" />
-      <updated>1773389946813</updated>
     </task>
     <task id="LOCAL-00008" summary="volume.draw">
       <option name="closed" value="true" />
@@ -505,7 +501,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781086259238</updated>
     </task>
-    <option name="localTasksCounter" value="56" />
+    <task id="LOCAL-00056" summary="путь не до конца">
+      <option name="closed" value="true" />
+      <created>1781086892578</created>
+      <option name="number" value="00056" />
+      <option name="presentableId" value="LOCAL-00056" />
+      <option name="project" value="LOCAL" />
+      <updated>1781086892578</updated>
+    </task>
+    <option name="localTasksCounter" value="57" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -532,7 +536,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Отрисовка уровня порции" />
     <MESSAGE value="заливка" />
     <MESSAGE value="настройка звук заливки" />
     <MESSAGE value="взбитие" />
@@ -557,6 +560,7 @@
     <MESSAGE value="колесо" />
     <MESSAGE value="смешивание" />
     <MESSAGE value="10/06/26" />
-    <option name="LAST_COMMIT_MESSAGE" value="10/06/26" />
+    <MESSAGE value="путь не до конца" />
+    <option name="LAST_COMMIT_MESSAGE" value="путь не до конца" />
   </component>
 </project>
