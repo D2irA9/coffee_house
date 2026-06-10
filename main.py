@@ -6,33 +6,41 @@ from classes.sound_manager import SoundManager
 from game import game
 import sys, globals, json, hashlib
 
+# Инициализация Pygame и микшера звука
 py.init()
 py.mixer.init()
 
+# Настройка окна
 py.display.set_caption("Мяу")
-
 icon = py.image.load("assets/icon/icon.png").convert_alpha()
 py.display.set_icon(icon)
 
+# Часы для управления FPS
 clock = py.time.Clock()
 fps = 30
 
-# Файл сессии
+# Путь к файлу сохранения сессии
 SESSION_FILE = "player_session.json"
 
-# Менеджер звука
+# Менеджер звука (создаётся глобально, чтобы звук играл во время заставки)
 sound_manager = SoundManager()
 
+# Список треков мяуканья и мурлыканья
 meow_tracks = sound_manager.get_sfx_tracks("cat/meow")
 purr_tracks = sound_manager.get_sfx_tracks("cat/purring")
-current_channel = None
-next_stage = "meow"
 
-# Менеджер станций
-station_manager = None
+current_channel = None      # текущий звуковой канал
+next_stage = "meow"         # этап заставки: "meow" -> "purr" -> "end"
 
-def check_session():
-    """Проверка сохранённой сессии"""
+station_manager = None       # менеджер станций (будет создан после входа)
+
+
+def check_session() -> bool:
+    """
+    Проверяет наличие сохранённой сессии.
+    Если файл существует и ID игрока валиден, загружает его в globals.
+    Возвращает True, если сессия активна и игрок авторизован.
+    """
     try:
         if os.path.exists(SESSION_FILE):
             with open(SESSION_FILE, "r", encoding="utf-8") as f:
@@ -42,14 +50,16 @@ def check_session():
                     if "id_player" in session and "name_player" in session:
                         globals.id_player = session["id_player"]
                         globals.name_player = session["name_player"]
+                        # Проверяем, существует ли игрок в базе данных
                         if db.check_player(globals.id_player):
                             return True
     except Exception as e:
         print(f"Ошибка загрузки сессии: {e}")
     return False
 
-def save_session(id_player, name_player):
-    """Сохранить сессию"""
+
+def save_session(id_player: int, name_player: str) -> None:
+    """Сохраняет данные сессии в JSON-файл и в глобальные переменные."""
     try:
         session_data = {"id_player": id_player, "name_player": name_player}
         with open(SESSION_FILE, "w", encoding="utf-8") as f:
@@ -59,7 +69,8 @@ def save_session(id_player, name_player):
     except Exception as e:
         print(f"Ошибка сохранения сессии: {e}")
 
-# Подготовка изображения для заставки
+
+# ----- Настройка изображения для заставки -----
 scale_factor = 5
 new_width = icon.get_width() * scale_factor
 new_height = icon.get_height() * scale_factor
@@ -67,13 +78,14 @@ image = py.transform.scale(icon, (new_width, new_height))
 image_rect = image.get_rect()
 image_rect.center = (WIDTH // 2, HEIGHT // 2)
 
-alpha = 0
-fade_speed = 5
-fade_done = False
-is_saver = True
+alpha = 0             # текущая прозрачность (0..255)
+fade_speed = 5        # скорость появления
+fade_done = False     # появилась ли картинка полностью?
+is_saver = True       # активна ли заставка
 
-def saver():
-    """Заставка с плавным появлением"""
+
+def saver() -> None:
+    """Отрисовывает заставку с плавным появлением иконки."""
     global alpha, fade_done
     screen.fill(WHITE)
     if not fade_done:
@@ -84,26 +96,33 @@ def saver():
     image.set_alpha(alpha)
     screen.blit(image, image_rect)
 
-def screen_login():
-    """Экран входа"""
+
+def screen_login() -> None:
+    """
+    Экран входа в игру.
+    Позволяет ввести email и пароль, проверяет их в БД.
+    При успехе сохраняет сессию и завершает экран.
+    """
     py.display.set_caption("Вход")
 
+    # Поля ввода: email и пароль
     input_boxes = [
         py.Rect(400, 300, 400, 50),   # Email
         py.Rect(400, 400, 400, 50)    # Пароль
     ]
     labels = ["Email", "Пароль"]
     input_texts = ['', '']
-    input_visible = [True, False]     # пароль скрыт
-    active_input = -1
+    input_visible = [True, False]     # пароль скрыт звёздочками
+    active_input = -1                 # индекс активного поля (-1 = не активен)
     color_inactive = py.Color('lightskyblue3')
     color_active = py.Color('dodgerblue2')
 
+    # Позиции курсора в каждом поле
     cursor_position = [0, 0]
     cursor_visible = True
     cursor_timer = 0
 
-    message = ''
+    message = ''                     # текст сообщения об ошибке
     message_color = RED
 
     registration_button = Button(400, 50, GREEN, (400, 600), "Регистрация")
@@ -117,9 +136,10 @@ def screen_login():
                 sys.exit()
             if event.type == py.KEYDOWN:
                 if event.key == py.K_ESCAPE:
-                    return
+                    return                     # выход из экрана входа
                 if active_input != -1:
                     if event.key == py.K_RETURN:
+                        # Попытка входа
                         if all(input_texts):
                             email = input_texts[0].strip()
                             password = input_texts[1]
@@ -130,13 +150,14 @@ def screen_login():
                             if user_data and user_data['password'] == hashed:
                                 # успешный вход
                                 save_session(user_data['id'], user_data['name'])
-                                running = False
+                                running = False   # успех, выходим из цикла
                             else:
                                 message = "Неверный email или пароль"
                                 message_color = RED
                         else:
                             message = "Заполните все поля"
                             message_color = RED
+                    # Обработка клавиш редактирования текста
                     elif event.key == py.K_BACKSPACE:
                         if cursor_position[active_input] > 0:
                             text = input_texts[active_input]
@@ -158,6 +179,7 @@ def screen_login():
                             pos = cursor_position[active_input]
                             input_texts[active_input] = text[:pos] + event.unicode + text[pos:]
                             cursor_position[active_input] += 1
+
             if event.type == py.MOUSEBUTTONDOWN:
                 active_input = -1
                 for i, box in enumerate(input_boxes):
@@ -167,8 +189,9 @@ def screen_login():
                         break
                 if registration_button.signal(event.pos):
                     if screen_registration():
-                        running = False
-        # Отрисовка
+                        running = False   # после успешной регистрации выходим на игру
+
+        # ----- Отрисовка -----
         screen.fill(WHITE)
         title = font.text_ret(48, "Вход", BLACK)
         title_rect = title.get_rect(center=(WIDTH//2, 150))
@@ -202,6 +225,7 @@ def screen_login():
             msg_rect = msg_surface.get_rect(center=(WIDTH//2, 500))
             screen.blit(msg_surface, msg_rect)
 
+        # Анимация курсора
         cursor_timer += 1
         if cursor_timer >= 30:
             cursor_visible = not cursor_visible
@@ -212,10 +236,15 @@ def screen_login():
         py.display.flip()
         clock.tick(fps)
 
-def screen_registration():
-    """Регистрация нового игрока"""
+
+def screen_registration() -> bool:
+    """
+    Экран регистрации нового игрока.
+    Возвращает True при успешной регистрации, иначе False.
+    """
     py.display.set_caption("Регистрация")
 
+    # Поля: email, имя, пароль, подтверждение пароля
     input_boxes = [
         py.Rect(400, 250, 400, 50),
         py.Rect(400, 350, 400, 50),
@@ -224,7 +253,7 @@ def screen_registration():
     ]
     labels = ["Email", "Имя", "Пароль", "Подтверждение пароля"]
     input_texts = ['', '', '', '']
-    input_visible = [True, True, False, False]
+    input_visible = [True, True, False, False]   # пароли скрыты
     active_input = -1
     color_inactive = py.Color('lightskyblue3')
     color_active = py.Color('dodgerblue2')
@@ -257,6 +286,7 @@ def screen_registration():
                             password = input_texts[2]
                             confirm = input_texts[3]
 
+                            # Валидация
                             if '@' not in email or '.' not in email:
                                 message = "Некорректный email"
                                 message_color = RED
@@ -284,7 +314,7 @@ def screen_registration():
                         else:
                             message = "Заполните все поля"
                             message_color = RED
-
+                    # Обработка редактирования текста (аналогично экрану входа)
                     elif event.key == py.K_BACKSPACE:
                         if cursor_position[active_input] > 0:
                             text = input_texts[active_input]
@@ -317,14 +347,12 @@ def screen_registration():
 
         # Отрисовка
         screen.fill(WHITE)
-
-        title = font.text_ret(size=48, text="Регистрация", color=BLACK)
+        title = font.text_ret(48, "Регистрация", BLACK)
         title_rect = title.get_rect(center=(WIDTH//2, 100))
         screen.blit(title, title_rect)
 
         for i, box in enumerate(input_boxes):
-            # Метка
-            label = font.text_ret(size=24, text=labels[i], color=BLACK)
+            label = font.text_ret(24, labels[i], BLACK)
             label_rect = label.get_rect(center=(box.centerx, box.top - 20))
             screen.blit(label, label_rect)
 
@@ -336,21 +364,21 @@ def screen_registration():
             display_text = input_texts[i]
             if not input_visible[i]:
                 display_text = '*' * len(display_text)
-            text_surface = font.text_ret(size=24, text=display_text, color=BLACK)
+            text_surface = font.text_ret(24, display_text, BLACK)
             screen.blit(text_surface, (box.x + 5, box.y + 10))
 
             # Курсор
             if i == active_input and cursor_visible:
-                cursor_x = box.x + 5 + font.text_ret(size=24, text=display_text[:cursor_position[i]], color=BLACK).get_width()
+                cursor_x = box.x + 5 + font.text_ret(24, display_text[:cursor_position[i]], BLACK).get_width()
                 cursor_y = box.y + 10
                 py.draw.line(screen, BLACK, (cursor_x, cursor_y), (cursor_x, cursor_y + 30), 2)
 
-        hint = font.text_ret(size=18, text="Enter - подтвердить | Escape - назад", color=GRAY)
+        hint = font.text_ret(18, "Enter - подтвердить | Escape - назад", GRAY)
         hint_rect = hint.get_rect(center=(WIDTH//2, 650))
         screen.blit(hint, hint_rect)
 
         if message:
-            msg_surface = font.text_ret(size=24, text=message, color=message_color)
+            msg_surface = font.text_ret(24, message, message_color)
             msg_rect = msg_surface.get_rect(center=(WIDTH//2, 600))
             screen.blit(msg_surface, msg_rect)
 
@@ -364,8 +392,12 @@ def screen_registration():
 
     return success
 
-def logout():
-    """Выход из аккаунта"""
+
+def logout() -> None:
+    """
+    Выход из аккаунта.
+    Удаляет файл сессии, сбрасывает глобальные переменные и возвращает игру на заставку.
+    """
     global station_manager, is_saver, next_stage, current_channel
     # Удаляем файл сессии
     try:
@@ -373,23 +405,29 @@ def logout():
             os.remove(SESSION_FILE)
     except Exception as e:
         print(f"Ошибка удаления сессии: {e}")
-    # Сбрасываем глобальные переменные
+
     globals.id_player = None
     globals.name_player = None
-    # Сбрасываем менеджер станций (чтобы при следующем входе создался новый)
-    station_manager = None
-    # Возвращаем заставку в исходное состояние
+
+    station_manager = None   # при следующем входе создастся новый
     is_saver = True
     next_stage = "meow"
     current_channel = None
 
-def parse_color(color_str):
+
+def parse_color(color_str: str) -> tuple:
+    """Преобразует строку вида "(R, G, B)" в кортеж (R, G, B)."""
     if not color_str:
         return (200, 200, 200)
     parts = color_str.strip('()').split(',')
     return tuple(int(p.strip()) for p in parts[:3])
 
-def load_ingredient_colors():
+
+def load_ingredient_colors() -> tuple:
+    """
+    Загружает цвета ингредиентов из базы данных.
+    Возвращает три словаря: milk_colors, espresso_colors, syrup_colors.
+    """
     colors_data = db.get_ingredients_color()
     milk = {}
     espresso = {}
@@ -404,9 +442,13 @@ def load_ingredient_colors():
             syrup[item['name']] = color
     return milk, espresso, syrup
 
+
+# ----- Подключение к базе данных и загрузка цветов ингредиентов -----
 db.connect()
 milk_colors, espresso_colors, syrup_colors = load_ingredient_colors()
 
+
+# ----- Основной игровой цикл -----
 while True:
     events = py.event.get()
     for event in events:
@@ -419,10 +461,12 @@ while True:
                 sys.exit()
             else:
                 if is_saver:
-                    is_saver = False
+                    is_saver = False   # нажатие любой клавиши прерывает заставку
 
     if is_saver:
+        # Показываем заставку
         saver()
+        # Поочерёдное воспроизведение звуков
         if (current_channel is None or not current_channel.get_busy()) and meow_tracks and purr_tracks:
             if next_stage == "meow":
                 current_channel = sound_manager.play_sfx("cat/meow")
@@ -438,9 +482,11 @@ while True:
                 is_saver = False
                 print("Заставка завершена")
     else:
+        # Проверяем сессию и запускаем игру или экран входа
         if check_session():
             if station_manager is None:
-                station_manager = StationManager(sound_manager, logout, milk_colors, espresso_colors, syrup_colors)
+                station_manager = StationManager(sound_manager, logout,
+                                                 milk_colors, espresso_colors, syrup_colors)
             game(screen, events, station_manager)
         else:
             screen_login()
