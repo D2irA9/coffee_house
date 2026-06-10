@@ -29,8 +29,19 @@ class Character(py.sprite.Sprite):
             self.set_path(path)
         self.path_finished = False
 
+    def set_path(self, new_path: List[Tuple[int, int]]):
+        """Установить новый путь"""
+        self.path = [py.math.Vector2(p) for p in new_path]
+        self.current_path_index = 0
+        self.path_finished = False
+        if self.path:
+            self.target_pos = self.path[0]
+            self.is_moving = True
+        else:
+            self.is_moving = False
+            self.target_pos = None
+
     def _load_animations(self) -> dict:
-        """Загружает все анимации из спрайт-листа"""
         animations = {}
         anim_defs = {
             'idle_down': (32, 288, 6),
@@ -49,7 +60,6 @@ class Character(py.sprite.Sprite):
         return animations
 
     def _load_frames(self, start_y: int, start_x: int, count: int) -> List[py.Surface]:
-        """Загрузка фреймов"""
         frames = []
         for i in range(count):
             x = start_x + i * self.SPRITE_WIDTH
@@ -59,26 +69,12 @@ class Character(py.sprite.Sprite):
             frames.append(scaled)
         return frames
 
-    def set_path(self, new_path: List[Tuple[int, int]]):
-        """Установить новый путь"""
-        self.path = [py.math.Vector2(p) for p in new_path]
-        self.current_path_index = 0
-        self.path_finished = False
-        if self.path:
-            self.target_pos = self.path[0]
-            self.is_moving = True
-        else:
-            self.is_moving = False
-            self.target_pos = None
-
     def update(self):
-        """Обновление анимации и движения"""
         self._update_animation()
         if self.is_moving and self.target_pos:
             self._update_movement()
 
     def _update_animation(self):
-        """Обновление анимации"""
         now = py.time.get_ticks()
         if now - self.last_update > self.FRAME_DELAY:
             self.current_frame = (self.current_frame + 1) % len(self.animations[self.current_animation])
@@ -86,7 +82,6 @@ class Character(py.sprite.Sprite):
             self.last_update = now
 
     def _update_movement(self):
-        """Обновление движений"""
         direction = self.target_pos - self.pos
         distance = direction.length()
         if distance < self.speed:
@@ -110,7 +105,6 @@ class Character(py.sprite.Sprite):
                 self.current_animation = self.current_animation.replace('walk', 'idle')
 
     def _update_walking_animation(self, direction: py.math.Vector2):
-        """Обновляет анимацию ходьбы в зависимости от направления"""
         if abs(direction.x) > abs(direction.y):
             if direction.x > 0:
                 self.current_animation = 'walk_right'
@@ -123,25 +117,20 @@ class Character(py.sprite.Sprite):
                 self.current_animation = 'walk_up'
 
     def sit_down(self, sit_animation: str = 'sit_left'):
-        """Сесть"""
         self.is_moving = False
         self.path = []
         self.target_pos = None
+        self.path_finished = False
         if sit_animation in self.animations:
             self.current_animation = sit_animation
             self.current_frame = 0
             self.image = self.animations[self.current_animation][self.current_frame]
-        else:
-            print(f"Анимация {sit_animation} не найдена")
 
     def draw(self, screen: py.Surface):
-        """Отрисовка"""
         screen.blit(self.image, self.rect)
 
     def is_clicked(self, pos: Tuple[int, int]) -> bool:
-        """Возвращает True если кликнули по персонажу"""
         return self.rect.collidepoint(pos)
 
     def is_path_finished(self) -> bool:
-        """Возвращает True, если персонаж завершил движение по пути"""
         return self.path_finished

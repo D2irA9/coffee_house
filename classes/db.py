@@ -128,6 +128,107 @@ class DB:
             print(f"Ошибка получения ингредиентов: {e}")
             return []
 
+    def get_npc_id_by_name(self, npc_name):
+        """Возвращает id_npc по имени NPC (из таблицы npc)"""
+        try:
+            # Проверяем, существует ли таблица npc, если нет – создаём
+            self.cursor.execute("""
+                CREATE TABLE IF NOT EXISTS npc (
+                    id INT PRIMARY KEY AUTO_INCREMENT,
+                    name VARCHAR(100) NOT NULL UNIQUE
+                )
+            """)
+            self.connection.commit()
+
+            query = "SELECT id FROM npc WHERE name = %s"
+            self.cursor.execute(query, (npc_name,))
+            result = self.cursor.fetchone()
+            if result:
+                return result['id']
+            else:
+                # Если NPC нет, добавляем
+                insert_query = "INSERT INTO npc (name) VALUES (%s)"
+                self.cursor.execute(insert_query, (npc_name,))
+                self.connection.commit()
+                return self.cursor.lastrowid
+        except Exception as e:
+            print(f"Ошибка получения/создания NPC: {e}")
+            return None
+
+    def add_statistics(self, id_player, npc_name, order_data, result):
+        """
+        Сохраняет результат выполнения заказа в таблицу statistics.
+        :param id_player: int - id игрока
+        :param npc_name: str - имя NPC
+        :param order_data: dict - данные о заказе и выполненном напитке
+        :param result: int - оценка (0-3)
+        """
+        try:
+            # Получаем id_npc
+            id_npc = self.get_npc_id_by_name(npc_name)
+            if id_npc is None:
+                print("Не удалось определить id_npc")
+                return None
+
+            # Преобразуем order_data в JSON-строку
+            import json
+            order_json = json.dumps(order_data, ensure_ascii=False, indent=2)
+
+            query = """
+                INSERT INTO statistics (id_player, id_npc, `order`, result)
+                VALUES (%s, %s, %s, %s)
+            """
+            self.cursor.execute(query, (id_player, id_npc, order_json, result))
+            self.connection.commit()
+            stat_id = self.cursor.lastrowid
+            print(f"Статистика сохранена (ID: {stat_id})")
+            return stat_id
+        except Exception as e:
+            print(f"Ошибка сохранения статистики: {e}")
+            self.connection.rollback()
+            return None
+
+    def get_or_create_nps_id(self, nps_name):
+        """Получение ID NPS по имени, если нет - создаёт"""
+        try:
+            # Пробуем найти существующего NPS
+            query = "SELECT id FROM nps WHERE name = %s"
+            self.cursor.execute(query, (nps_name,))
+            result = self.cursor.fetchone()
+
+            if result:
+                return result['id']
+
+            # Создаём нового NPS
+            query_insert = "INSERT INTO nps (name) VALUES (%s)"
+            self.cursor.execute(query_insert, (nps_name,))
+            self.connection.commit()
+
+            print(f"Создан новый NPS: {nps_name} (ID: {self.cursor.lastrowid})")
+            return self.cursor.lastrowid
+
+        except Exception as e:
+            print(f"Ошибка получения/создания NPS: {e}")
+            return None
+
+    def get_nps_id(self, nps_name):
+        """Получение ID NPS по имени"""
+        try:
+            query = "SELECT id FROM nps WHERE name = %s"
+            self.cursor.execute(query, (nps_name,))
+            result = self.cursor.fetchone()
+            if result:
+                return result['id']
+            else:
+                # Если NPS не найден, добавляем его
+                query_insert = "INSERT INTO nps (name) VALUES (%s)"
+                self.cursor.execute(query_insert, (nps_name,))
+                self.connection.commit()
+                return self.cursor.lastrowid
+        except Exception as e:
+            print(f"Ошибка получения ID NPS: {e}")
+            return 1  # возвращаем ID по умолчанию
+
     def get_ingredients_color(self):
         if self.cursor is None:
             print("Ошибка: курсор не инициализирован. Вызовите connect() сначала.")

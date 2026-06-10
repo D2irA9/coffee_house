@@ -106,11 +106,6 @@ class BuildStation(Station):
         self.target_fill_ratio = 0.0
         self.target_color = None
 
-        # ---- Кнопка "ГОТОВО" ----
-        self.complete_button = Button(150, 40, GREEN, (525, 600))
-        self.complete_button.visible = False
-        self.complete_button.text = "ГОТОВО"
-
         # ---- Ссылка на станцию заказов ----
         self.order_station = None
 
@@ -145,6 +140,16 @@ class BuildStation(Station):
         self.right_added = False
         self.show_final_stage = False
 
+        # ---- Кнопки принятия/отмены ----
+        self.accept_button = Button(100, 40, GREEN, (480, 600))
+        self.accept_button.text = "Принять"
+        self.cancel_button = Button(100, 40, RED, (620, 600))
+        self.cancel_button.text = "Отмена"
+        self.accept_button.visible = False
+        self.cancel_button.visible = False
+        self.left_ingredient_added = False
+        self.right_ingredient_added = False
+
     def load_available_syrups(self):
         from globals import db, id_player
         ingredients = db.get_ingredients_level(id_player)
@@ -176,6 +181,7 @@ class BuildStation(Station):
             name = drink.get('espresso_type')
         if not name:
             return None
+        import os
         path = os.path.join(folder, f"{name}.png")
         try:
             img = py.image.load(path).convert_alpha()
@@ -281,10 +287,6 @@ class BuildStation(Station):
                 s.fill((*temp_color, 128))
                 screen.blit(s, fill_rect)
         screen.blit(self.center_cap_img, (x, y))
-        font_small = py.font.Font(None, 36)
-        size_text = font_small.render(self.selected_size, True, (255,255,255))
-        text_rect = size_text.get_rect(center=(x + self.center_cap_width//2, y - 20))
-        screen.blit(size_text, text_rect)
 
     # ---------- Зацикленная лента ингредиентов (центрированная) ----------
     def get_visible_bar_items(self):
@@ -298,40 +300,33 @@ class BuildStation(Station):
         return visible
 
     def draw_top_bar(self, screen):
-        # Фон полосы (центрирован)
         py.draw.rect(screen, (70,70,90), self.bar_rect)
         py.draw.rect(screen, (40,40,60), self.bar_rect, 3)
 
         visible_items = self.get_visible_bar_items()
         item_w, item_h = 120, 80
         spacing = 20
-        # Общая ширина всех элементов с промежутками
         total_width = self.max_visible_items * item_w + (self.max_visible_items - 1) * spacing
         start_x = self.bar_x + (self.bar_width - total_width) // 2
         for i, item in enumerate(visible_items):
             x = start_x + i * (item_w + spacing)
             y = self.bar_y + (self.bar_height - item_h)//2
             item['rect'] = py.Rect(x, y, item_w, item_h)
-            # Фон
             py.draw.rect(screen, item['color'], (x, y, item_w, item_h))
-            # Подсветка центрального элемента
             if i == self.max_visible_items // 2:
                 py.draw.rect(screen, (255,255,100), (x, y, item_w, item_h), 4)
             else:
                 py.draw.rect(screen, (255,255,200), (x, y, item_w, item_h), 3)
-            # Спрайт или текст
             if 'sprite' in item and item['sprite']:
                 sprite_rect = item['sprite'].get_rect(center=(x+item_w//2, y+item_h//2))
                 screen.blit(item['sprite'], sprite_rect)
             else:
                 name_text = font.text_ret(18, item['name'][:12], (0,0,0))
                 screen.blit(name_text, (x+5, y+30))
-            # Порции для основных ингредиентов
             if item['type'] in ('milk', 'espresso') and item.get('portions', 0) > 0:
                 portions_text = font.text_ret(14, f"{item['portions']} порц.", (0,0,0))
                 screen.blit(portions_text, (x+5, y+55))
 
-        # Иконка перетаскивания
         if self.dragging_ingredient and self.drag_ingredient_icon:
             mx, my = py.mouse.get_pos()
             icon = self.drag_ingredient_icon
@@ -341,9 +336,8 @@ class BuildStation(Station):
     def start_pouring(self, item, portion_increment=None):
         if item is None:
             return
-        # Определяем приращение заполнения
         if item['type'] in ('milk', 'espresso'):
-            max_ports = {'S':6, 'M':5, 'L':4}[self.selected_size]
+            max_ports = {'S':4, 'M':5, 'L':6}[self.selected_size]
             portions = item.get('portions', 1)
             inc = portions / max_ports
         else:  # syrup
@@ -386,7 +380,6 @@ class BuildStation(Station):
     def finish_pouring(self):
         item = self.pouring_item
         if item['type'] in ('milk', 'espresso'):
-            # Находим, какой боковой напиток соответствует item
             target_side = None
             if item is self.left_drink:
                 target_side = 'left'
@@ -396,36 +389,40 @@ class BuildStation(Station):
             if target_side:
                 drink = self.left_drink if target_side == 'left' else self.right_drink
                 portions = drink.get('portions', 1)
-                # Вычисляем, сколько порций было использовано
-                max_ports = {'S': 6, 'M': 5, 'L': 4}[self.selected_size]
+                max_ports = {'S':4, 'M':5, 'L':6}[self.selected_size]   # исправлено
                 used_ratio = self.target_fill_ratio - self.start_fill_ratio
-                used_portions = round(used_ratio * max_ports)  # сколько порций добавлено
+                used_portions = round(used_ratio * max_ports)
                 if used_portions <= 0:
-                    used_portions = 1  # минимально одна порция
+                    used_portions = 1
                 new_portions = max(portions - used_portions, 0)
+
+                if target_side == 'left':
+                    self.left_ingredient_added = True
+                elif target_side == 'right':
+                    self.right_ingredient_added = True
+
+                if self.left_ingredient_added and self.right_ingredient_added:
+                    self.accept_button.visible = True
+                    self.cancel_button.visible = True
+
                 if new_portions == 0:
-                    # Очищаем боковой стакан
                     if target_side == 'left':
                         self.left_drink = None
                         self.left_added = True
                     else:
                         self.right_drink = None
                         self.right_added = True
-                    # Удаляем из ленты
                     for i, it in enumerate(self.top_bar_items):
                         if it.get('id') == target_side:
                             self.top_bar_items.pop(i)
                             break
                 else:
-                    # Уменьшаем порции и пересчитываем fill_ratio
                     drink['portions'] = new_portions
-                    drink['fill_ratio'] = new_portions / 4.0  # базовый максимум 4 порции
-                    # Обновляем спрайт в ленте (чтобы отображалось новое количество порций)
+                    drink['fill_ratio'] = new_portions / 4.0
                     for it in self.top_bar_items:
                         if it.get('id') == target_side:
                             it['portions'] = new_portions
                             break
-        # Для сиропов ничего не удаляем
         self.pouring = False
         self.pouring_item = None
         self.dragging_ingredient = None
@@ -443,10 +440,14 @@ class BuildStation(Station):
             'color': self.current_color,
             'fill_ratio': self.current_fill_ratio
         }
-        self.order_station.add_completed_drink(drink_data)
+        self.order_station.receive_drink(drink_data)   # изменён вызов
         self.reset_build_station()
 
     def reset_build_station(self):
+        self.left_ingredient_added = False
+        self.right_ingredient_added = False
+        self.accept_button.visible = False
+        self.cancel_button.visible = False
         self.left_drink = None
         self.right_drink = None
         self.size_selected = False
@@ -454,7 +455,6 @@ class BuildStation(Station):
         self.show_final_stage = False
         self.current_color = None
         self.current_fill_ratio = 0.0
-        self.complete_button.visible = False
         self.ready_drinks.clear()
         self.left_added = False
         self.right_added = False
@@ -463,7 +463,6 @@ class BuildStation(Station):
         self.dragging_ingredient = None
         self.drag_ingredient_icon = None
         self.pouring = False
-        # Восстанавливаем ленту: только сиропы
         self.top_bar_items = []
         for syrup in self.available_syrups:
             self.top_bar_items.append({
@@ -501,17 +500,17 @@ class BuildStation(Station):
             self.draw_display(screen)
         self.draw_dragged_glass(screen)
 
-        # Кнопки выбора размера
         if self.left_drink and self.right_drink and not self.size_selected:
             screen.blit(self.fon_cup, (400,615))
             for btn in self.size_buttons:
                 btn.draw(screen)
 
-        # Финальная стадия: стакан и лента
         if self.size_selected:
             self.draw_center_glass(screen)
             self.draw_top_bar(screen)
-            self.complete_button.draw(screen)
+            if self.left_ingredient_added and self.right_ingredient_added:
+                self.accept_button.draw(screen)
+                self.cancel_button.draw(screen)
 
     def events(self, events):
         if self.pouring:
@@ -526,8 +525,6 @@ class BuildStation(Station):
                             self.selected_size = btn.size
                             self.size_selected = True
                             self.show_final_stage = True
-                            self.complete_button.visible = True
-                            # Добавляем левый и правый напитки в ленту
                             if self.left_drink and not self.left_in_bar:
                                 left_item = self.left_drink
                                 left_item['id'] = 'left'
@@ -542,20 +539,23 @@ class BuildStation(Station):
                                 self.right_in_bar = True
                             return
 
-                # Если уже в режиме сборки
+                # Режим сборки
                 if self.size_selected:
-                    # Кнопка "ГОТОВО"
-                    if self.complete_button.signal(event.pos):
-                        self.complete_drink()
-                        return
-
-                    # Начало перетаскивания ленты (кручение)
+                    # Кручение ленты
                     if self.bar_rect.collidepoint(event.pos) and not self.bar_dragging:
                         self.bar_dragging = True
                         self.bar_drag_start_x = event.pos[0]
                         self.bar_drag_start_index = self.current_bar_index
 
-                    # Перетаскивание основного ингредиента из зоны в центральный стакан
+                    if self.size_selected and self.left_ingredient_added and self.right_ingredient_added:
+                        if self.accept_button.signal(event.pos):
+                            self.complete_drink()
+                            return
+                        if self.cancel_button.signal(event.pos):
+                            self.reset_build_station()
+                            return
+
+                    # Перетаскивание из зон
                     if not self.dragging_ingredient and not self.pouring:
                         if self.left_drink and self.left_zone_rect.collidepoint(event.pos):
                             self.dragging_ingredient = self.left_drink
@@ -576,7 +576,7 @@ class BuildStation(Station):
                             self.drag_ingredient_icon = icon_surf
                             return
 
-                    # Клик по центральному элементу ленты (наливание)
+                    # Клик по центральному элементу ленты
                     visible = self.get_visible_bar_items()
                     center_idx = self.max_visible_items // 2
                     if center_idx < len(visible):
@@ -602,7 +602,7 @@ class BuildStation(Station):
                     self.drag_mouse_pos = event.pos
                 if self.bar_dragging:
                     dx = event.pos[0] - self.bar_drag_start_x
-                    step = 140  # чувствительность
+                    step = 140
                     delta = int(dx / step)
                     if delta != 0:
                         total = len(self.top_bar_items)
@@ -631,7 +631,6 @@ class BuildStation(Station):
                 if self.bar_dragging:
                     self.bar_dragging = False
 
-                # Завершение перетаскивания основного ингредиента в стакан
                 if self.dragging_ingredient and not self.pouring:
                     if self.center_cap_rect.collidepoint(event.pos):
                         self.start_pouring(self.dragging_ingredient)

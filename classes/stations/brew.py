@@ -179,7 +179,7 @@ class BrewStation(Station):
                 "temperature": cell.get("selected_milk_temp"),
                 "fill_ratio": cell["pour_progress"],
                 "quality": cell.get("whisk_quality", "normal"),
-                "portions": portions  # ← добавить
+                "portions": portions
             }
         elif cell["active_ingredient"] == "espresso" and cell["menu_level"] == 4:
             drink_info = {
@@ -638,6 +638,7 @@ class BrewStation(Station):
             cell["is_whisking"] = True
             cell["whisk_start_time"] = current_time
             cell["whisk_progress"] = 0.0
+            cell["whisk_quality"] = "normal"  # <-- Добавить эту строку
             cell["menu_level"] = 4
             self.start_whisk_sound()
             # Разрешаем перетаскивание стакана
@@ -669,6 +670,8 @@ class BrewStation(Station):
         portions = int(cell["pour_progress"] * 4)
         if portions < 1:
             portions = 1
+
+        # Определяем параметры для разных порций
         if portions == 1:
             target_time = 26.0
             cell["ideal_zone_start"] = 40
@@ -685,20 +688,32 @@ class BrewStation(Station):
             target_time = 86.0
             cell["ideal_zone_start"] = 70
             cell["ideal_zone_end"] = 90
+
         progress = min(100.0, (elapsed / target_time) * 100)
         cell["whisk_progress"] = progress
+
+        # Обновляем качество на текущий момент (даже если взбивание не завершено)
+        zone_start = cell["ideal_zone_start"]
+        zone_end = cell["ideal_zone_end"]
         if progress >= 100.0:
-            cell["is_whisking"] = False
-            self.stop_whisk_sound()
-            # Определяем качество по попаданию в зелёную зону
-            zone_start = cell["ideal_zone_start"]
-            zone_end = cell["ideal_zone_end"]
             if zone_start <= progress <= zone_end:
                 cell["whisk_quality"] = "perfect"
             elif progress < zone_start:
                 cell["whisk_quality"] = "early"
             else:
                 cell["whisk_quality"] = "late"
+            cell["is_whisking"] = False
+            self.stop_whisk_sound()
+        else:
+            # Если взбивание не завершено, качество зависит от текущего прогресса
+            if progress >= zone_end:
+                cell["whisk_quality"] = "over"
+            elif progress >= zone_start:
+                cell["whisk_quality"] = "good"
+            elif progress > 0:
+                cell["whisk_quality"] = "early"
+            else:
+                cell["whisk_quality"] = "normal"  # начальное качество
 
     def update_pouring(self, cell, current_time):
         if not cell["is_pouring"]:
