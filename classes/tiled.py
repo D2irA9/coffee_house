@@ -1,13 +1,17 @@
 import pygame as py
 from pytmx import load_pygame
+
 class Tile(py.sprite.Sprite):
+    """Класс плиток"""
     def __init__(self, pos, surf, groups, scale, tile_size):
         super().__init__(groups)
         self.tile_size = tile_size
         self.image = py.transform.scale(surf, (int(surf.get_width() * scale), int(surf.get_height() * scale)))
         self.rect = self.image.get_rect(topleft=pos)
         self.hitbox = self.rect
+
 class Map:
+    """Класс карты"""
     def __init__(self, tmx_path, tile_size, scale=1):
         self.tile_size = tile_size
         self.scale = scale
